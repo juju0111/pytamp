@@ -27,6 +27,9 @@ class Scene:
             self.bench_num: int = list(self.benchmark_config.keys())[0]
             self.goal_object = "goal_box"
 
+            if self.bench_num == 0:
+                self._init_bench_rearrange()
+
             if self.bench_num == 1:
                 self._init_bench_1()
 
@@ -51,6 +54,9 @@ class Scene:
         self.cur_place_obj_name = None
         self.prev_place_obj_name = []
         self.pick_obj_default_pose = None
+
+    def _init_bench_rearrange(self):
+        pass
 
     def _init_bench_1(self):
         if self.benchmark_config[self.bench_num].get("goal_object"):
