@@ -27,24 +27,26 @@ class Rearrange1(Benchmark):
             object_names : object name list on the support object
             scene (Scene for Acronym) : 
         """
-        self.object_names = object_names
-
-        self.param = {"object_names": self.object_names, "goal_scene" : goal_scene}
+        self.object_names = object_names        
+        self.param = {"object_names": self.object_names, "goal_scene" : goal_scene._poses}
         self.benchmark_config = {0: self.param}
         self.init_scene = init_scene
         self.goal_scene = goal_scene
         self.obj_colors = None
         super().__init__(robot_name, geom, is_pyplot, self.benchmark_config)
 
-        # define goal_scene
-        self.goal_scene_mngr = SceneManager(
-            self.geom, is_pyplot=self.is_pyplot, benchmark=self.benchmark_config, debug_mode=True
-        )
-
         self._load_robot()
         self._load_objects()
         self._load_scene(self.init_scene, self.scene_mngr)        
+        # goal_scene_mngr가 필요할까? 궂이 ? 
+        # 처음 scene_mngr 생성 시, scene.mngr.scene에서 goal 조건 셋팅해서 따로 필요없을 거 같은데. 
+                # define goal_scene
+        self.goal_scene_mngr = SceneManager(
+            self.geom, is_pyplot=self.is_pyplot, benchmark=self.benchmark_config, debug_mode=True
+        )
         self._load_scene(self.goal_scene, self.goal_scene_mngr)        
+
+        self.scene_mngr.scene._init_bench_rearrange()
 
     def _load_robot(self):
         self.robot = SingleArm(
@@ -135,10 +137,12 @@ def make_scene():
     def custom_parser():
         # object는 parser.add_argument( ~ , nargs="+") , nargs="+" 때문에 list로 arg 셋팅함
         args = easydict.EasyDict({
-            "objects" : ["/home/juju/contact_graspnet/acronym/grasps/Candle_b94fcdffbd1befa57f5e345e9a3e5d44_0.012740999337464653.h5", 
-                        "/home/juju/contact_graspnet/acronym/grasps/Canister_714320da4aafcb4a47be2353d2b2403b_0.00023318612778400807.h5", 
-                        "/home/juju/contact_graspnet/acronym/grasps/Bowl_95ac294f47fd7d87e0b49f27ced29e3_0.0008357974151618388.h5",
-                        "/home/juju/contact_graspnet/acronym/grasps/Xbox360_435f39e98d2260f0d6e21b8525c3f8bb_0.002061950217848804.h5"],
+            "objects" : [
+                        # "/home/juju/contact_graspnet/acronym/grasps/Candle_b94fcdffbd1befa57f5e345e9a3e5d44_0.012740999337464653.h5", 
+                        # "/home/juju/contact_graspnet/acronym/grasps/Canister_714320da4aafcb4a47be2353d2b2403b_0.00023318612778400807.h5", 
+                        # "/home/juju/contact_graspnet/acronym/grasps/Bowl_95ac294f47fd7d87e0b49f27ced29e3_0.0008357974151618388.h5",
+                        # "/home/juju/contact_graspnet/acronym/grasps/Xbox360_435f39e98d2260f0d6e21b8525c3f8bb_0.002061950217848804.h5"
+                        ],
             
             "support" : "/home/juju/contact_graspnet/acronym/grasps/3Shelves_29b66fc9db2f1558e0e89fd83955713c_0.0025867867973150068.h5",
             "num_grasps" : 5,

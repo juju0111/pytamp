@@ -56,7 +56,15 @@ class Scene:
         self.pick_obj_default_pose = None
 
     def _init_bench_rearrange(self):
-        pass
+        self.goal_objects = []
+        self.goal_object_poses = {}
+        obj_names = self.benchmark_config[self.bench_num].get("object_names")
+        if obj_names:
+            self.goal_objects = obj_names
+            for i in obj_names:
+                self.goal_object_poses[i] = self.benchmark_config[self.bench_num]["goal_scene"][i]
+        self.goal_object_num = len(obj_names)
+        self.rearranged_object = []
 
     def _init_bench_1(self):
         if self.benchmark_config[self.bench_num].get("goal_object"):
@@ -151,6 +159,8 @@ class Scene:
 
     # Add for MCTS
     def is_terminal_state(self):
+        if self.bench_num == 0:
+            return self.check_terminal_state_bench_0()
         if self.bench_num == 1:
             return self.check_terminal_state_bench_1()
         if self.bench_num == 2:
@@ -159,6 +169,23 @@ class Scene:
             return self.check_terminal_state_bench_3()
         if self.bench_num == 4:
             return self.check_terminal_state_bench_4()
+
+    def check_terminal_state_bench_0(self):
+        is_success = self.check_success_rearr_bench_0()
+        return is_success 
+    
+    def check_success_rearr_bench_0(self):
+        #  TODO
+        #  다음에 object 별로 Cartesian distance 구해서 다 빼는거 구현해야함 
+
+        is_success = True
+        
+        rearr_objs = self.rearranged_object
+        for i in self.goal_objects:
+            if i not in rearr_objs:
+                is_success = False
+        
+        return is_success
 
     def check_terminal_state_bench_1(self):
         is_success = self.check_success_stacked_bench_1(is_terminal=True)

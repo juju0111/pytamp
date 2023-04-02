@@ -15,9 +15,11 @@ class ActionInfo:
     PICK_OBJ_NAME = "pick_obj_name"
     HELD_OBJ_NAME = "held_obj_name"
     PLACE_OBJ_NAME = "place_obj_name"
+    REARR_OBJ_NAME = "rearr_obj_name"
     GRASP_POSES = "grasp_poses"
     TCP_POSES = "tcp_poses"
     RELEASE_POSES = "release_poses"
+    REARR_POSES = 'rearr_poses'
     LEVEL = "level"
 
 

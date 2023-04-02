@@ -3,17 +3,14 @@ from pytamp.utils.making_scene_utils import load_mesh, get_obj_name, Make_Scene
 from pykin.utils.mesh_utils import get_object_mesh, get_object_mesh_acronym
 from pykin.utils import plot_utils as p_utils
 
+from pytamp.action.rearrangement import RearrangementAction
 from pytamp.benchmark.rearrange1 import make_scene
 
 def main():
     object_names, init_scene, goal_scene = make_scene()
 
     rearrangement_scene = Rearrange1('doosan', object_names, init_scene, goal_scene, is_pyplot=False)
-
-    
-
-
-
+    ArrangementAction = RearrangementAction(rearrangement_scene.scene_mngr)
 
 
 
