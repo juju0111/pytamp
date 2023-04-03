@@ -4,7 +4,7 @@ from pytamp.action.pick import PickAction
 from pytamp.action.place import PlaceAction
 
 benchmark1 = Benchmark1(robot_name="doosan", geom="visual", is_pyplot=True, box_num=3)
-pick = PickAction(benchmark1.scene_mngr, n_contacts=1, n_directions=1)
+pick = PickAction(benchmark1.scene_mngr, n_contacts=0, n_directions=0)
 place = PlaceAction(benchmark1.scene_mngr, n_samples_held_obj=1, n_samples_support_obj=1)
 
 ################# Action Test ##################

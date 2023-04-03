@@ -12,6 +12,7 @@ from pytamp.action.rearrangement import RearrangementAction
 from pytamp.search.node_data import NodeData
 from pytamp.scene.scene import Scene
 from pytamp.scene.scene_manager import SceneManager
+from pytamp.utils.making_scene_utils import Make_Scene
 
 from pykin.utils import plot_utils as p_utils
 from pykin.utils.kin_utils import ShellColors as sc
@@ -21,6 +22,7 @@ class MCTS_rearrangement:
     def __init__(
         self,
         scene_mngr: SceneManager,
+        init_scene: Make_Scene,
         sampling_method: str = "uct",
         budgets: int = 500,
         c: float = 100000,
@@ -38,7 +40,7 @@ class MCTS_rearrangement:
             # robot action은 우선 패스하고 object transition만 고려해서 Goal Scene을 만족하는 
             # state가 나올 때 까지 search!! 
             self.rearr_action = RearrangementAction(scene_mngr)
-
+            self.init_scene = init_scene
         if bench_num == 1:
             self.pick_action = PickAction(scene_mngr, n_contacts=0, n_directions=1)
             self.place_action = PlaceAction(
@@ -166,6 +168,8 @@ class MCTS_rearrangement:
         max_level_1_value = self.get_max_value_level_1()
         self.values_for_level_1.append(max_level_1_value)
 
+        
+
         if not self.only_optimize_1:
             success_level_1_sub_nodes = None
             if self.level_wise_1_success:
@@ -193,7 +197,8 @@ class MCTS_rearrangement:
                 self.level_wise_1_success = False
             else:
                 self.values_for_level_2.append(self.level2_max_value)
-    
+        
+
     def do_planning(self, iter):
         self.pick_obj_set = set()
         self.pick_obj_list = []
@@ -206,6 +211,8 @@ class MCTS_rearrangement:
         self._level_wise_1_optimize(state_node=0, depth=0)
         max_level_1_value = self.get_max_value_level_1()
         self.values_for_level_1.append(max_level_1_value)
+
+        ############  level 1 ################
 
         if not self.only_optimize_1:
             success_level_1_sub_nodes = None
@@ -245,6 +252,7 @@ class MCTS_rearrangement:
 
         # ? Check Current State
         # *======================================================================================================================== #
+        print("###### check_goal : ",self._is_terminal(cur_state))
         if self._is_terminal(cur_state):
             print(f"{sc.OKBLUE}Success!!!!!{sc.ENDC}")
             self.level_wise_1_success = True
@@ -371,7 +379,8 @@ class MCTS_rearrangement:
         # else:
         #     possible_actions = list(self.place_action.get_possible_actions_level_1(cur_state))
         #     # self.render_action("Place Action", cur_state, possible_actions, is_holding)
-        possible_actions = list(self.rearr_action.get_possible_actions_level_1(cur_state))
+
+        possible_actions = list(self.rearr_action.get_possible_actions_level_1(scene_for_sample=self.init_scene))
 
         for possible_action in possible_actions:
             action_node = self.tree.number_of_nodes()
@@ -576,23 +585,39 @@ class MCTS_rearrangement:
         if self.scene_mngr.scene.bench_num == 0:
             # 현재 transition한 object를 받아와서 goal과 비교해야함. 
             prev_rearr_obj_num = len(cur_state.rearranged_object)
-            next_state_is_success = next_state.check_success_rearr_bench_0()
+            next_state_is_success = next_state.check_success_rearr_action(\
+                            cur_logical_action[self.rearr_action.info.REARR_OBJ_NAME])
+            next_rearr_obj_num = len(next_state.rearranged_object) 
             if logical_action_type == "rearr":
                 if next_state_is_success:
-                    pass 
-            
-            pass
-
+                    # When you place well on your goal
+                    if next_rearr_obj_num - prev_rearr_obj_num == 1:
+                        print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
+                        return abs(reward) * 1 / (depth + 1) * 30
+                    # When you place object on the target again
+                    if next_rearr_obj_num - prev_rearr_obj_num == 0:
+                        print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
+                        # return abs(reward) * 1 / (depth + 1) 
+                else:
+                    # When an object in the goal is moved to another place
+                    if next_rearr_obj_num - prev_rearr_obj_num == -1:
+                        print(f"{sc.FAIL}Bad Action{sc.ENDC}")
+                        return max(reward * 1 / (depth + 1) * 40, self.infeasible_reward)
+                    # When an object that was not at the goal position is moved to another location
+                    if next_rearr_obj_num - prev_rearr_obj_num == 0:
+                        print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
 
 
         if self.scene_mngr.scene.bench_num == 1:
             prev_stacked_box_num = cur_state.success_stacked_box_num
             next_state_is_success = next_state.check_success_stacked_bench_1()
+            # Good action if placed well in alphabetical order
             if logical_action_type == "place":
                 if next_state_is_success:
                     if next_state.stacked_box_num - prev_stacked_box_num == 1:
                         print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
                         return abs(reward) * 1 / (depth + 1) * 20
+            # repicking object on top of goal_tray is bad
             if logical_action_type == "pick":
                 if next_state.stacked_box_num - prev_stacked_box_num == -1:
                     print(f"{sc.FAIL}Bad Action{sc.ENDC}")

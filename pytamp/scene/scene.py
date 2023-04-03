@@ -65,6 +65,7 @@ class Scene:
                 self.goal_object_poses[i] = self.benchmark_config[self.bench_num]["goal_scene"][i]
         self.goal_object_num = len(obj_names)
         self.rearranged_object = []
+        self.pre_defined_min_distance = 1e-3
 
     def _init_bench_1(self):
         if self.benchmark_config[self.bench_num].get("goal_object"):
@@ -175,17 +176,38 @@ class Scene:
         return is_success 
     
     def check_success_rearr_bench_0(self):
-        #  TODO
-        #  다음에 object 별로 Cartesian distance 구해서 다 빼는거 구현해야함 
-
         is_success = True
         
         rearr_objs = self.rearranged_object
+        rearr_objs_num = len(rearr_objs)
         for i in self.goal_objects:
             if i not in rearr_objs:
                 is_success = False
-        
+
+        if rearr_objs_num != self.goal_object_num:
+            is_success = False
+        else:
+            print(f"########## {rearr_objs}#############")
         return is_success
+
+    # True if the object moved from the current scene is less than 
+    # a certain distance compared to goal_location
+    def check_success_rearr_action(self, obj_name:str):
+        #  다음에 object 별로 Cartesian distance 구해서 다 빼는거 구현해야함 
+        next_scene_obj_pose = self.objs[obj_name].h_mat
+        goal_obj_pose = self.goal_object_poses[obj_name]
+
+        distance = np.linalg.norm(next_scene_obj_pose[:3,3]- goal_obj_pose[:3,3])
+
+        if self.pre_defined_min_distance > distance:
+            if obj_name not in self.rearranged_object:
+                self.rearranged_object.append(obj_name)
+            return True
+        else:
+            if obj_name in self.rearranged_object:
+                self.rearranged_object.remove(obj_name)
+            return False
+
 
     def check_terminal_state_bench_1(self):
         is_success = self.check_success_stacked_bench_1(is_terminal=True)
