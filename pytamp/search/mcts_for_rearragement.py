@@ -26,7 +26,7 @@ class MCTS_rearrangement:
         sampling_method: str = "uct",
         budgets: int = 500,
         c: float = 100000,
-        max_depth: int = 20,
+        max_depth: int = 16,
         gamma: float = 1,
         debug_mode=False,
     ):
@@ -94,7 +94,7 @@ class MCTS_rearrangement:
         # benchmark에 적절한 reward setting 
         if self.scene_mngr.scene.bench_num == 0:
             # when occupied 
-            self.infeasible_reward = -5
+            self.infeasible_reward = -10
             # when do appropriate placement
             self.goal_reward = 5 
 
@@ -168,50 +168,6 @@ class MCTS_rearrangement:
         max_level_1_value = self.get_max_value_level_1()
         self.values_for_level_1.append(max_level_1_value)
 
-        
-
-        if not self.only_optimize_1:
-            success_level_1_sub_nodes = None
-            if self.level_wise_1_success:
-                success_level_1_sub_nodes = self.get_nodes_from_leaf_node(
-                    self.success_level_1_leaf_node
-                )[::-1]
-
-                self.has_aleardy_level_1_optimal_nodes = False
-                for level_1_optimal_nodes in self.history_level_1_optimal_nodes:
-                    if set(success_level_1_sub_nodes).issubset(level_1_optimal_nodes):
-                        print("Aleady has optimal nodes!!")
-                        self.has_aleardy_level_1_optimal_nodes = True
-                        break
-
-                if not self.has_aleardy_level_1_optimal_nodes:
-                    self._level_wise_2_optimize(success_level_1_sub_nodes)
-                    self._update_success_level_1_and_2(success_level_1_sub_nodes)
-                    self.history_level_1_optimal_nodes.append(success_level_1_sub_nodes)
-                    self.values_for_level_2.append(
-                        self.get_max_value_level_2(success_level_1_sub_nodes)
-                    )
-                else:
-                    self.values_for_level_2.append(self.level2_max_value)
-
-                self.level_wise_1_success = False
-            else:
-                self.values_for_level_2.append(self.level2_max_value)
-        
-
-    def do_planning(self, iter):
-        self.pick_obj_set = set()
-        self.pick_obj_list = []
-        print(f"{sc.HEADER}=========== Search iteration : {iter+1} ==========={sc.ENDC}")
-        if self.debug_mode:
-            # visited_tree = self.get_visited_subtree()
-            self.visualize_tree("Next Logical Node", self.tree)
-        self.success_level_1_leaf_node = None
-
-        self._level_wise_1_optimize(state_node=0, depth=0)
-        max_level_1_value = self.get_max_value_level_1()
-        self.values_for_level_1.append(max_level_1_value)
-
         ############  level 1 ################
 
         if not self.only_optimize_1:
@@ -228,23 +184,73 @@ class MCTS_rearrangement:
                         self.has_aleardy_level_1_optimal_nodes = True
                         break
 
+                ##############  check level 1 aleady found   ###############
+
                 if not self.has_aleardy_level_1_optimal_nodes:
-                    self._level_wise_2_optimize(success_level_1_sub_nodes)
-                    self._update_success_level_1_and_2(success_level_1_sub_nodes)
+                    # self._level_wise_2_optimize(success_level_1_sub_nodes)
+                    # self._update_success_level_1_and_2(success_level_1_sub_nodes)
                     self.history_level_1_optimal_nodes.append(success_level_1_sub_nodes)
-                    self.values_for_level_2.append(
-                        self.get_max_value_level_2(success_level_1_sub_nodes)
-                    )
+                    # self.values_for_level_2.append(
+                        # self.get_max_value_level_2(success_level_1_sub_nodes)
+                    # )
                 else:
-                    self.values_for_level_2.append(self.level2_max_value)
+                    pass
+                    # self.values_for_level_2.append(self.level2_max_value)
 
                 self.level_wise_1_success = False
             else:
-                self.values_for_level_2.append(self.level2_max_value)
+                pass
+                # self.values_for_level_2.append(self.level2_max_value)
+        
 
-        # if (iter+1) % 40 == 0:
-        #     subtree = self.get_success_subtree()
-        #     self.visualize_tree('Test', tree=subtree)
+    # def do_planning(self, iter):
+    #     self.pick_obj_set = set()
+    #     self.pick_obj_list = []
+    #     print(f"{sc.HEADER}=========== Search iteration : {iter+1} ==========={sc.ENDC}")
+    #     if self.debug_mode:
+    #         # visited_tree = self.get_visited_subtree()
+    #         self.visualize_tree("Next Logical Node", self.tree)
+    #     self.success_level_1_leaf_node = None
+
+    #     self._level_wise_1_optimize(state_node=0, depth=0)
+    #     max_level_1_value = self.get_max_value_level_1()
+    #     self.values_for_level_1.append(max_level_1_value)
+
+    #     ############  level 1 ################
+
+    #     if not self.only_optimize_1:
+    #         success_level_1_sub_nodes = None
+    #         if self.level_wise_1_success:
+    #             success_level_1_sub_nodes = self.get_nodes_from_leaf_node(
+    #                 self.success_level_1_leaf_node
+    #             )[::-1]
+
+    #             self.has_aleardy_level_1_optimal_nodes = False
+    #             for level_1_optimal_nodes in self.history_level_1_optimal_nodes:
+    #                 if set(success_level_1_sub_nodes).issubset(level_1_optimal_nodes):
+    #                     print("Aleady has optimal nodes!!")
+    #                     self.has_aleardy_level_1_optimal_nodes = True
+    #                     break
+                
+    #             # return 
+    #             ##############  check level 1 aleady found   ###############
+    #             if not self.has_aleardy_level_1_optimal_nodes:
+    #                 self._level_wise_2_optimize(success_level_1_sub_nodes)
+    #                 self._update_success_level_1_and_2(success_level_1_sub_nodes)
+    #                 self.history_level_1_optimal_nodes.append(success_level_1_sub_nodes)
+    #                 self.values_for_level_2.append(
+    #                     self.get_max_value_level_2(success_level_1_sub_nodes)
+    #                 )
+    #             else:
+    #                 self.values_for_level_2.append(self.level2_max_value)
+
+    #             self.level_wise_1_success = False
+    #         else:
+    #             self.values_for_level_2.append(self.level2_max_value)
+
+    #     # if (iter+1) % 40 == 0:
+    #     #     subtree = self.get_success_subtree()
+    #     #     self.visualize_tree('Test', tree=subtree)
 
     def _level_wise_1_optimize_rearr(self, state_node, depth):
         cur_state_node = state_node
@@ -593,11 +599,11 @@ class MCTS_rearrangement:
                     # When you place well on your goal
                     if next_rearr_obj_num - prev_rearr_obj_num == 1:
                         print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                        return abs(reward) * 1 / (depth + 1) * 30
+                        return abs(reward) * 1 / (depth+1) * 10
                     # When you place object on the target again
                     if next_rearr_obj_num - prev_rearr_obj_num == 0:
                         print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
-                        # return abs(reward) * 1 / (depth + 1) 
+                        return reward 
                 else:
                     # When an object in the goal is moved to another place
                     if next_rearr_obj_num - prev_rearr_obj_num == -1:
@@ -606,6 +612,7 @@ class MCTS_rearrangement:
                     # When an object that was not at the goal position is moved to another location
                     if next_rearr_obj_num - prev_rearr_obj_num == 0:
                         print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
+                        return reward 
 
 
         if self.scene_mngr.scene.bench_num == 1:
@@ -824,6 +831,10 @@ class MCTS_rearrangement:
             self.infeasible_sub_nodes.append(sub_optimal_nodes)
             print(self.infeasible_sub_nodes)
 
+    def get_max_value_level_1(self):
+        max_value = self.tree.nodes[0][NodeData.VALUE]
+        return max_value
+
     def _update_success_level_1_and_2(self, sub_optimal_nodes):
         sub_optimal_leaf_node = sub_optimal_nodes[-1]
         success_level_1 = self.tree.nodes[sub_optimal_leaf_node][NodeData.LEVEL1]
@@ -833,7 +844,7 @@ class MCTS_rearrangement:
             for sub_optimal_node in sub_optimal_nodes:
                 self.tree.nodes[sub_optimal_node][NodeData.SUCCESS] = True
 
-    def get_nodes_from_leaf_node(self, leaf_node):
+    def get_nodes_from_leaf_node(self, leaf_node:int):
         parent_nodes = [node for node in self.tree.predecessors(leaf_node)]
         if not parent_nodes:
             return [leaf_node]
@@ -887,7 +898,7 @@ class MCTS_rearrangement:
         leaf_nodes.sort()
         return leaf_nodes
 
-    def get_max_value_level_1(self):
+    def z(self):
         max_value = self.tree.nodes[0][NodeData.VALUE]
         return max_value
 
