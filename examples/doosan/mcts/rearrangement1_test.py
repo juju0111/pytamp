@@ -12,7 +12,7 @@ def get_parser():
     parser = argparse.ArgumentParser(description="Test Rearragement 1.")
     parser.add_argument("--budgets", metavar="T", type=int, default=100, help="Horizon")
     parser.add_argument("--max_depth", metavar="H", type=int, default=10, help="Max depth")
-    parser.add_argument("--seed", metavar="i", type=int, default=2, help="A random seed")
+    parser.add_argument("--seed", metavar="i", type=int, default=3, help="A random seed")
     parser.add_argument(
         "--algo",
         metavar="alg",
@@ -50,7 +50,7 @@ def main():
     final_place_all_object_poses = []
 
     # final_optimal_trees = []
-    c_list = 10 ** np.linspace(-2, 2.0, 10)
+    c_list = 10 ** np.linspace(-1, 1.5, 6)
 
     #######################
     fig, ax = p_utils.init_3d_figure(name="Rearrangement 1")
@@ -79,7 +79,7 @@ def main():
                 debug_mode=args.debug_mode,
             )
 
-        mcts.only_optimize_1 = True
+        mcts.only_optimize_1 = False
         start_time = time.time()
         for i in range(budgets):
             print(
@@ -91,6 +91,10 @@ def main():
         final_level_1_values.append(mcts.values_for_level_1)
 
         ########## level 1 ##########
-
+        if mcts.history_level_1_dict:
+            j, max_value_nodes = mcts.get_max_value_nodes_level_1()
+            print("Result : ", max_value_nodes)
+            mcts.render_rearr("_", max_value_nodes)
+        
 if __name__=="__main__":
     main()

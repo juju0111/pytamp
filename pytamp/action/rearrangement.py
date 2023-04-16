@@ -80,6 +80,8 @@ class RearrangementAction(ActivityBase):
         
         # get_goal_location
         goal_location = self.get_goal_location(obj_name=obj_name)
+
+        location = list()
         # sample_arbitrary_location
         location = list(self.get_arbitrary_location(obj_name, scene_for_sample, num = 1 ))
         location.append(goal_location)
@@ -184,7 +186,7 @@ class RearrangementAction(ActivityBase):
         return action
 
     def render_axis(self, scene_mngr:SceneManager):
-        for o_name in self.object_names:
+        for o_name in self.scene_mngr.scene.goal_objects:
             pose = scene_mngr.scene.objs[o_name].h_mat
             scene_mngr.render.render_axis(pose)
     

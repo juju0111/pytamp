@@ -86,8 +86,8 @@ def find_idx_from_bai_perturb(tree, children, c):
     best_node_idx = 0
 
     selected_values = np.asarray(selected_values)
-    # selected_values[np.where(np.asarray(selected_visits) == 0)] = sys.maxsize
-    selected_values[np.isinf(selected_values)] = 0.0
+    selected_values[np.where(np.asarray(selected_visits) == 0)] = sys.maxsize
+    # selected_values[np.isinf(selected_values)] = 0.0
 
     if len(selected_visits) == 1:
         best_node_idx = 0

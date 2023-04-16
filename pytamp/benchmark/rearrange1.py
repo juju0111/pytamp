@@ -141,8 +141,8 @@ def make_scene():
         args = easydict.EasyDict({
             "objects" : [
                         # "/home/juju/contact_graspnet/acronym/grasps/Candle_b94fcdffbd1befa57f5e345e9a3e5d44_0.012740999337464653.h5", 
-                        # "/home/juju/contact_graspnet/acronym/grasps/Canister_714320da4aafcb4a47be2353d2b2403b_0.00023318612778400807.h5", 
-                        # "/home/juju/contact_graspnet/acronym/grasps/Bowl_95ac294f47fd7d87e0b49f27ced29e3_0.0008357974151618388.h5",
+                        "/home/juju/contact_graspnet/acronym/grasps/Canister_714320da4aafcb4a47be2353d2b2403b_0.00023318612778400807.h5", 
+                        "/home/juju/contact_graspnet/acronym/grasps/Bowl_95ac294f47fd7d87e0b49f27ced29e3_0.0008357974151618388.h5",
                         # "/home/juju/contact_graspnet/acronym/grasps/Xbox360_435f39e98d2260f0d6e21b8525c3f8bb_0.002061950217848804.h5"
                         ],
             
@@ -159,8 +159,7 @@ def make_scene():
 
     args.objects.append('ben_cube.stl')
     args.objects.append('bottle.stl')
-    args.objects.append('ben_cube.stl')
-    args.objects.append('bottle.stl')
+    # args.objects.append('ben_cube.stl')
     # args.objects.append('bottle.stl')
 
     obj_dict = {}
@@ -181,6 +180,7 @@ def make_scene():
 
     # for PYTAMP 
     support_mesh = get_object_mesh("ben_table.stl", scale=[1.0, 1.5, 1.0])
+    # support_mesh = get_object_mesh("ben_table.stl", scale=[0.8, 1.0, 1.0])
     init_scene = Make_Scene.random_arrangement(object_names, object_meshes, support_mesh)
     goal_scene = Make_Scene.random_arrangement(object_names, object_meshes, support_mesh, for_goal_scene=True)
 

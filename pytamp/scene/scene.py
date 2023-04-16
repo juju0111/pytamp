@@ -187,7 +187,7 @@ class Scene:
         if rearr_objs_num != self.goal_object_num:
             is_success = False
         else:
-            print(f"########## {rearr_objs}#############")
+            print(f"##########{rearr_objs}#############")
         return is_success
 
     # True if the object moved from the current scene is less than 

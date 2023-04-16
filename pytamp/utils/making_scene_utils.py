@@ -76,7 +76,7 @@ class Make_Scene(Scene_ACRONYM):
     
     def _get_random_stable_pose_for_goal_scene(self, stable_poses, stable_poses_probs):
         """Return a stable pose according to their likelihood.
-
+        
         Args:
             stable_poses (list[np.ndarray]): List of stable poses as 4x4 matrices.
             stable_poses_probs (list[float]): List of probabilities.
