@@ -396,7 +396,7 @@ class MCTS_rearrangement:
         #     possible_actions = list(self.place_action.get_possible_actions_level_1(cur_state))
         #     # self.render_action("Place Action", cur_state, possible_actions, is_holding)
 
-        possible_actions = list(self.rearr_action.get_possible_actions_level_1(scene_for_sample=self.init_scene))
+        possible_actions = list(self.rearr_action.get_possible_actions_level_1(scene = cur_state, scene_for_sample=self.init_scene))
 
         for possible_action in possible_actions:
             action_node = self.tree.number_of_nodes()
@@ -1221,6 +1221,7 @@ class MCTS_rearrangement:
         for i in nodes:
             if self.tree.nodes[i]['type'] == 'state':
                 self.render_rearr_state(f"{i}",self.tree.nodes[i]['state'])
+
 
     @staticmethod
     def weird_division(n, d):
