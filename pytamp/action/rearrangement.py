@@ -68,7 +68,7 @@ class RearrangementAction(ActivityBase):
                     logical_state in self.scene_mngr.scene.logical_states[obj_name]
                     for logical_state in self.filter_logical_states
                 ):
-                action_level_1 = self.get_action_level_1_for_single_object(obj_name=obj_name, scene_for_sample=scene_for_sample)
+                action_level_1 = self.get_action_level_1_for_single_object(scene=scene ,obj_name=obj_name, scene_for_sample=scene_for_sample)
                 if not action_level_1:
                     continue
                 yield action_level_1
@@ -86,7 +86,7 @@ class RearrangementAction(ActivityBase):
         location = list(self.get_arbitrary_location(obj_name, scene_for_sample, num = 1 ))
         location.append(goal_location)
 
-        grasp_poses_not_collision = list(self.get_goal_location_not_collision(location))
+        grasp_poses_not_collision = list(self.get_goal_location_not_collision(scene, location))
         action = self.get_action(obj_name, grasp_poses_not_collision)
         return action
 
@@ -160,8 +160,15 @@ class RearrangementAction(ActivityBase):
             .dot(t_utils.get_inverse_homogeneous(next_scene.goal_object_poses[obj_name]))
         # TODO
 
-    def get_goal_location_not_collision(self, location : list):
-        # self.scene_mngr.set_object_pose(obj_name ,goal_location)
+    def get_goal_location_not_collision(self,scene:Scene, location : list):
+        if scene is not None:
+            self.deepcopy_scene(scene)
+        
+        # change collision_mngr scene
+        for obj_name, obj in scene.objs.items():
+            self.scene_mngr.set_object_pose(obj_name,obj.h_mat)
+
+
         for i in location:
             for obj_name, goal_pose in i.items():
                 is_collision = False

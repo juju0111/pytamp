@@ -1204,8 +1204,7 @@ class MCTS_rearrangement:
         p_utils.plot_basis(ax)
         self.pick_action.show()
 
-    def render_rearr_state(self, title, state: Scene):
-        ax = None
+    def render_rearr_state(self, ax, title, state: Scene):
         if self.scene_mngr.is_pyplot is True:
             fig, ax = p_utils.init_3d_figure(name=title)
 
@@ -1218,9 +1217,12 @@ class MCTS_rearrangement:
         if self.scene_mngr.is_pyplot is True:
             fig, ax = p_utils.init_3d_figure(name=title)
 
+        self.rearr_action.scene_mngr.scene = \
+                self.tree.nodes[nodes[-1]]['state']
+
         for i in nodes:
             if self.tree.nodes[i]['type'] == 'state':
-                self.render_rearr_state(f"{i}",self.tree.nodes[i]['state'])
+                self.render_rearr_state(ax, f"{i}",self.tree.nodes[i]['state'])
 
 
     @staticmethod
