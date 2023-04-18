@@ -196,7 +196,7 @@ class Scene:
         #  다음에 object 별로 Cartesian distance 구해서 다 빼는거 구현해야함 
         next_scene_obj_pose = self.objs[obj_name].h_mat
         goal_obj_pose = self.goal_object_poses[obj_name]
-
+        print(next_scene_obj_pose, goal_obj_pose)
         distance = np.linalg.norm(next_scene_obj_pose[:3,3]- goal_obj_pose[:3,3])
 
         if self.pre_defined_min_distance > distance:

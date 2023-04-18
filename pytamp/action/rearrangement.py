@@ -37,56 +37,37 @@ class RearrangementAction(ActivityBase):
             rearrangement1 = make_scene_()
             ArrangementAction = RearrangementAction(rearrangement1.scene_mngr)
             actions = list(ArrangementAction.get_possible_actions_level_1(scene_for_sample=rearrangement1.init_scene))
-
         """
-        # transit object to goal location
 
         self.deepcopy_scene(scene)
 
+        # change collision_mngr obj_poses
+        if scene:
+            for obj_name, obj in scene.objs.items():
+                self.scene_mngr.set_object_pose(obj_name,obj.h_mat)
+        
         for obj_name in self.scene_mngr.scene.objs:
-            if self.scene_mngr.scene.logical_states[obj_name].get(
-                self.scene_mngr.scene.logical_state.on
-            ):
-                if isinstance(
-                    self.scene_mngr.scene.logical_states[obj_name].get(
-                        self.scene_mngr.scene.logical_state.on
-                    ),
-                    list,
-                ):
-                    for placed_obj in self.scene_mngr.scene.logical_states[obj_name].get(
-                        self.scene_mngr.scene.logical_state.on
-                    ):
-                        placed_obj_name = placed_obj.name
-
-                else:
-                    placed_obj_name = (
-                        self.scene_mngr.scene.logical_states[obj_name]
-                        .get(self.scene_mngr.scene.logical_state.on)
-                        .name
-                    )
             if not any(
                     logical_state in self.scene_mngr.scene.logical_states[obj_name]
                     for logical_state in self.filter_logical_states
                 ):
-                action_level_1 = self.get_action_level_1_for_single_object(scene=scene ,obj_name=obj_name, scene_for_sample=scene_for_sample)
+                action_level_1 = self.get_action_level_1_for_single_object(obj_name=obj_name, scene_for_sample=scene_for_sample)
                 if not action_level_1:
                     continue
                 yield action_level_1
 
-    def get_action_level_1_for_single_object(self, scene=None, obj_name: str = None, scene_for_sample: Make_Scene = None) -> dict:
+    def get_action_level_1_for_single_object(self, obj_name: str = None, scene_for_sample: Make_Scene = None) -> dict:
         # return possible position
-        if scene is not None:
-            self.deepcopy_scene(scene)
-        
+
         # get_goal_location
         goal_location = self.get_goal_location(obj_name=obj_name)
 
         location = list()
         # sample_arbitrary_location
-        location = list(self.get_arbitrary_location(obj_name, scene_for_sample, num = 1 ))
+        location = list(self.get_arbitrary_location(obj_name, scene_for_sample, sample_num = 1 ))
         location.append(goal_location)
 
-        grasp_poses_not_collision = list(self.get_goal_location_not_collision(scene, location))
+        grasp_poses_not_collision = list(self.get_goal_location_not_collision(location))
         action = self.get_action(obj_name, grasp_poses_not_collision)
         return action
 
@@ -98,13 +79,13 @@ class RearrangementAction(ActivityBase):
         goal_location[obj_name] = self.scene_mngr.scene.goal_object_poses[obj_name]
         return goal_location
     
-    def get_arbitrary_location(self,obj_name:str, scene_for_sample: Make_Scene = None, num:int=0)-> dict:
+    def get_arbitrary_location(self,obj_name:str, scene_for_sample: Make_Scene = None, sample_num:int=0)-> dict:
         # random location sample
         """
         Sample arbitrary location how many you want 
         """
         total_location =[]
-        for i in range(num):
+        for i in range(sample_num):
             location = {}
             result, pose = scene_for_sample.find_object_placement(self.scene_mngr.scene.objs[obj_name].gparam, \
                                                                   max_iter=100, \
@@ -134,11 +115,12 @@ class RearrangementAction(ActivityBase):
             next_scene : moved 
         """
         if not action:
-            ValueError("Not found any action!!")
+            ValueError("Not found any action!!")    
 
+        next_scene = deepcopy(scene)
         for rearr_pose in action[self.info.REARR_POSES]:
             for name, pose in rearr_pose.items():
-                next_scene = deepcopy(scene)
+                # next_scene = deepcopy(scene)
                 next_scene.rearr_pose = rearr_pose
             if pose is not None:
                 c_T_w = t_utils.get_inverse_homogeneous(self.scene_mngr.scene.objs[name].h_mat)
@@ -160,15 +142,7 @@ class RearrangementAction(ActivityBase):
             .dot(t_utils.get_inverse_homogeneous(next_scene.goal_object_poses[obj_name]))
         # TODO
 
-    def get_goal_location_not_collision(self,scene:Scene, location : list):
-        if scene is not None:
-            self.deepcopy_scene(scene)
-        
-        # change collision_mngr scene
-        for obj_name, obj in scene.objs.items():
-            self.scene_mngr.set_object_pose(obj_name,obj.h_mat)
-
-
+    def get_goal_location_not_collision(self, location : list):
         for i in location:
             for obj_name, goal_pose in i.items():
                 is_collision = False
