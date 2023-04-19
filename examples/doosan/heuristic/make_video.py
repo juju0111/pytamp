@@ -13,7 +13,9 @@ images = [img for img in folders if img.endswith(".png")]
 frame = cv2.imread(os.path.join(image_folder, images[0]))
 height, width, layers = frame.shape
 
-video = cv2.VideoWriter(video_name, cv2.VideoWriter_fourcc(*"DIVX"), 60, (width, height))
+video = cv2.VideoWriter(
+    video_name, cv2.VideoWriter_fourcc(*"DIVX"), 60, (width, height)
+)
 for image in tqdm(images):
     video.write(cv2.imread(os.path.join(image_folder, image)))
 

@@ -45,7 +45,9 @@ class RenderTriMesh(SceneRender):
         self.render_gripper(robot, geom)
 
     def render_objects(self, objs):
-        self.trimesh_scene = apply_objects_to_scene(trimesh_scene=self.trimesh_scene, objs=objs)
+        self.trimesh_scene = apply_objects_to_scene(
+            trimesh_scene=self.trimesh_scene, objs=objs
+        )
 
     def render_object(self, obj, pose=None):
         o_type = obj.gtype
@@ -69,7 +71,9 @@ class RenderTriMesh(SceneRender):
         axis = trimesh.creation.axis(origin_size=0.01, transform=pose)
         self.trimesh_scene.add_geometry(axis)
 
-    def render_point(self, ax=None, point=np.zeros(3), radius=0.001, color=[1.0, 0.0, 0.0]):
+    def render_point(
+        self, ax=None, point=np.zeros(3), radius=0.001, color=[1.0, 0.0, 0.0]
+    ):
         pose = np.eye(4)
         pose[:3, 3] = point
         sphere_mesh = trimesh.creation.icosphere(radius=radius)
@@ -79,7 +83,9 @@ class RenderTriMesh(SceneRender):
     def show(self):
         # self.trimesh_scene.set_camera(np.array([-np.pi/2 - np.pi/6, np.pi, np.pi/6 + np.pi/2]), 3, resolution=(640, 480))
         self.trimesh_scene.set_camera(
-            np.array([-np.pi / 2 - np.pi / 3, np.pi, -np.pi / 6]), 2.5, resolution=(640, 480)
+            np.array([-np.pi / 2 - np.pi / 3, np.pi, -np.pi / 6]),
+            2.5,
+            resolution=(1024, 720),
         )
         self.trimesh_scene.show("gl")
         self.trimesh_scene = None
@@ -87,7 +93,9 @@ class RenderTriMesh(SceneRender):
 
 class RenderPyPlot(SceneRender):
     @staticmethod
-    def render_scene(ax, objs, robot, alpha, robot_color, geom, only_visible_geom, visible_text):
+    def render_scene(
+        ax, objs, robot, alpha, robot_color, geom, only_visible_geom, visible_text
+    ):
         RenderPyPlot.render_objects(ax, objs, alpha)
         RenderPyPlot.render_robot(
             ax, robot, alpha, robot_color, geom, only_visible_geom, visible_text
@@ -131,7 +139,13 @@ class RenderPyPlot(SceneRender):
 
     @staticmethod
     def render_gripper(
-        ax, robot, alpha=0.9, robot_color=None, visible_tcp=True, pose=None, only_visible_axis=False
+        ax,
+        robot,
+        alpha=0.9,
+        robot_color=None,
+        visible_tcp=True,
+        pose=None,
+        only_visible_axis=False,
     ):
         p_utils.plot_basis(ax, robot)
 
@@ -157,7 +171,9 @@ class RenderPyPlot(SceneRender):
         for link, info in gripper_info.items():
             if link == "collision_pad":
                 continue
-            p_utils.plot_geom_from_info(ax, robot, link, "collision", info, alpha, robot_color)
+            p_utils.plot_geom_from_info(
+                ax, robot, link, "collision", info, alpha, robot_color
+            )
 
     @staticmethod
     def render_axis(ax, pose, axis=[1, 1, 1], scale=0.05):

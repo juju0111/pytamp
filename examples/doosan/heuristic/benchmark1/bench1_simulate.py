@@ -15,12 +15,14 @@ if len(sys.argv) > 1:
 
 seed = 10
 end_num = 2
-filename = (
-    f"./bench1_planner/benchmark1_test_algo({method})_budget({budgets})_seed({seed})_{end_num}.npy"
-)
+filename = f"./bench1_planner/benchmark1_test_algo({method})_budget({budgets})_seed({seed})_{end_num}.npy"
 # filename = f"./bench1_planner/Episode2/uct/benchmark1_test_algo({method})_budget({budgets})_seed({seed})_{end_num}.npy"
-benchmark1 = Benchmark1(robot_name="doosan", geom="collision", is_pyplot=True, box_num=6)
-place = PlaceAction(benchmark1.scene_mngr, n_samples_held_obj=0, n_samples_support_obj=0)
+benchmark1 = Benchmark1(
+    robot_name="doosan", geom="collision", is_pyplot=True, box_num=6
+)
+place = PlaceAction(
+    benchmark1.scene_mngr, n_samples_held_obj=0, n_samples_support_obj=0
+)
 
 with open(filename, "rb") as f:
     data_for_seed = np.load(f, allow_pickle=True)

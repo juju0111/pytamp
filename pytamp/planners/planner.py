@@ -48,7 +48,9 @@ class Planner(NodeData, metaclass=ABCMeta):
 
     def get_target_eef_poses(self):
         if not self.joint_path:
-            ValueError("Cannot get target eef poses, because the joint path has not been optained")
+            ValueError(
+                "Cannot get target eef poses, because the joint path has not been optained"
+            )
 
         eef_poses = []
         for step, joint in enumerate(self.joint_path):
@@ -90,8 +92,12 @@ class Planner(NodeData, metaclass=ABCMeta):
         Setup joint limits (lower and upper)
         """
         if self.arm is not None:
-            self.q_limits_lower = self._scene_mngr.scene.robot.joint_limits_lower[self.arm]
-            self.q_limits_upper = self._scene_mngr.scene.robot.joint_limits_upper[self.arm]
+            self.q_limits_lower = self._scene_mngr.scene.robot.joint_limits_lower[
+                self.arm
+            ]
+            self.q_limits_upper = self._scene_mngr.scene.robot.joint_limits_upper[
+                self.arm
+            ]
         else:
             self.q_limits_lower = self._scene_mngr.scene.robot.joint_limits_lower
             self.q_limits_upper = self._scene_mngr.scene.robot.joint_limits_upper
@@ -157,7 +163,9 @@ class Planner(NodeData, metaclass=ABCMeta):
                         transform.h_mat,
                         self._scene_mngr.scene.robot.links[link].collision.offset.h_mat,
                     )
-                self._scene_mngr.robot_collision_mngr.set_transform(name=link, h_mat=h_mat)
+                self._scene_mngr.robot_collision_mngr.set_transform(
+                    name=link, h_mat=h_mat
+                )
 
         if is_attached:
             gripper_pose = fk[self._scene_mngr.scene.robot.eef_name].h_mat
@@ -176,7 +184,8 @@ class Planner(NodeData, metaclass=ABCMeta):
                 is_object_collision,
                 col_name,
             ) = self._scene_mngr.robot_collision_mngr.in_collision_other(
-                other_manager=self._scene_mngr.obj_collision_mngr, return_names=visible_name
+                other_manager=self._scene_mngr.obj_collision_mngr,
+                return_names=visible_name,
             )
 
             if is_attached:

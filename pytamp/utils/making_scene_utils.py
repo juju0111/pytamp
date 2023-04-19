@@ -6,20 +6,22 @@ import trimesh.transformations as tra
 from acronym_tools import Scene as Scene_ACRONYM
 import numpy as np
 
+
 class Make_Scene(Scene_ACRONYM):
     obj_dict = {}
     object_meshes = []
     object_naems = []
+
     def __init__(self):
         super().__init__()
 
-    def get_obj_name(self,obj_fname):
+    def get_obj_name(self, obj_fname):
         # set mesh_name for Scene
         if obj_fname.endswith(".h5"):
-            obj_name = [i for i in obj_fname.split('/') if 'h5' in i]
-            obj_name = obj_name[0].split('_')[0]
+            obj_name = [i for i in obj_fname.split("/") if "h5" in i]
+            obj_name = obj_name[0].split("_")[0]
         elif obj_fname.endswith(".stl"):
-            obj_name = obj_fname.split('.')[0]
+            obj_name = obj_fname.split(".")[0]
 
         if obj_name not in self.obj_dict.keys():
             self.obj_dict[obj_name] = 0
@@ -28,10 +30,16 @@ class Make_Scene(Scene_ACRONYM):
             self.obj_dict[obj_name] += 1
             obj_name = obj_name + str(self.obj_dict[obj_name])
         return obj_name
-    
+
     @classmethod
     def random_arrangement(
-        cls, object_names, object_meshes, support_mesh, distance_above_support=0.002, gaussian=None, for_goal_scene=False
+        cls,
+        object_names,
+        object_meshes,
+        support_mesh,
+        distance_above_support=0.002,
+        gaussian=None,
+        for_goal_scene=False,
     ):
         """Generate a random scene by arranging all object meshes on any support surface of a provided support mesh.
 
@@ -54,7 +62,7 @@ class Make_Scene(Scene_ACRONYM):
                 obj_mesh,
                 distance_above_support=distance_above_support,
                 gaussian=gaussian,
-                for_goal_scene =for_goal_scene
+                for_goal_scene=for_goal_scene,
             )
         return s
 
@@ -73,10 +81,10 @@ class Make_Scene(Scene_ACRONYM):
             angle=np.random.uniform(0, 2.0 * np.pi), direction=[0, 0, 1]
         )
         return inplane_rot.dot(stable_poses[index])
-    
+
     def _get_random_stable_pose_for_goal_scene(self, stable_poses, stable_poses_probs):
         """Return a stable pose according to their likelihood.
-        
+
         Args:
             stable_poses (list[np.ndarray]): List of stable poses as 4x4 matrices.
             stable_poses_probs (list[float]): List of probabilities.
@@ -85,15 +93,20 @@ class Make_Scene(Scene_ACRONYM):
             np.ndarray: homogeneous 4x4 matrix (z axis == 1)
         """
         # index = np.random.choice(len(stable_poses), p=stable_poses_probs)
-        ## index : only returm z axis == 1 
-        index = np.where(stable_poses[:,2,2] > 0.98)[0][0]
+        ## index : only returm z axis == 1
+        index = np.where(stable_poses[:, 2, 2] > 0.98)[0][0]
         inplane_rot = tra.rotation_matrix(
             angle=np.random.uniform(0, 2.0 * np.pi), direction=[0, 0, 1]
         )
         return inplane_rot.dot(stable_poses[index])
-    
+
     def find_object_placement(
-        self, obj_mesh, max_iter, distance_above_support, gaussian=None, for_goal_scene=False,
+        self,
+        obj_mesh,
+        max_iter,
+        distance_above_support,
+        gaussian=None,
+        for_goal_scene=False,
     ):
         """Try to find a non-colliding stable pose on top of any support surface.
 
@@ -128,7 +141,6 @@ class Make_Scene(Scene_ACRONYM):
         iter = 0
         colliding = True
         while iter < max_iter and colliding:
-
             # Sample position in plane
             if gaussian:
                 while True:
@@ -157,7 +169,9 @@ class Make_Scene(Scene_ACRONYM):
             )
 
             if for_goal_scene:
-                pose = self._get_random_stable_pose_for_goal_scene(stable_poses, stable_poses_probs)
+                pose = self._get_random_stable_pose_for_goal_scene(
+                    stable_poses, stable_poses_probs
+                )
             else:
                 pose = self._get_random_stable_pose(stable_poses, stable_poses_probs)
 
@@ -176,7 +190,13 @@ class Make_Scene(Scene_ACRONYM):
         return not colliding, placement_T if not colliding else None
 
     def place_object(
-        self, obj_id, obj_mesh, max_iter=100, distance_above_support=0.0, gaussian=None, for_goal_scene=False,
+        self,
+        obj_id,
+        obj_mesh,
+        max_iter=100,
+        distance_above_support=0.0,
+        gaussian=None,
+        for_goal_scene=False,
     ):
         """Add object and place it in a non-colliding stable pose on top of any support surface.
 
@@ -205,6 +225,7 @@ class Make_Scene(Scene_ACRONYM):
 
         return success
 
+
 def load_mesh(filename, mesh_root_dir, scale=None):
     """Load a mesh from a JSON or HDF5 file from the grasp dataset. The mesh will be scaled accordingly.
 
@@ -219,11 +240,11 @@ def load_mesh(filename, mesh_root_dir, scale=None):
     """
     if filename.endswith(".json"):
         data = json.load(open(filename, "r"))
-        mesh_fname = data["object"].decode('utf-8')
+        mesh_fname = data["object"].decode("utf-8")
         mesh_scale = data["object_scale"] if scale is None else scale
     elif filename.endswith(".h5"):
         data = h5py.File(filename, "r")
-        mesh_fname = data["object/file"][()].decode('utf-8')
+        mesh_fname = data["object/file"][()].decode("utf-8")
         mesh_scale = data["object/scale"][()] if scale is None else scale
     else:
         raise RuntimeError("Unknown file ending:", filename)
@@ -233,21 +254,21 @@ def load_mesh(filename, mesh_root_dir, scale=None):
 
     return obj_mesh
 
+
 def load_mesh_stl(filename, scale):
     """
     This function is for .stl mesh
     """
     return get_object_mesh(filename, scale)
-    
+
 
 def get_obj_name(obj_dict, obj_fname):
-    
     if obj_fname.endswith(".h5"):
-        obj_name = [i for i in obj_fname.split('/') if 'h5' in i]
-        obj_name = obj_name[0].split('_')[0]
+        obj_name = [i for i in obj_fname.split("/") if "h5" in i]
+        obj_name = obj_name[0].split("_")[0]
     elif obj_fname.endswith(".stl"):
-        obj_name = obj_fname.split('.')[0]
-    
+        obj_name = obj_fname.split(".")[0]
+
     if obj_name not in obj_dict.keys():
         obj_dict[obj_name] = 0
         obj_name = obj_name + str(obj_dict[obj_name])

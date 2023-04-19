@@ -32,11 +32,17 @@ for seed in range(24, 50):
         ("place", "tray_blue"),
     ]
 
-    print(f"Benchmark: {benchmark3.scene_mngr.scene.bench_num}, Algo: {algo}, Seed: {seed}")
+    print(
+        f"Benchmark: {benchmark3.scene_mngr.scene.bench_num}, Algo: {algo}, Seed: {seed}"
+    )
     np.random.seed(seed)
     try:
         planner = Planner(benchmark3.scene_mngr)
-        (pnp_all_joint_path, pick_all_objects, place_all_object_poses) = planner.do_planning(plan)
+        (
+            pnp_all_joint_path,
+            pick_all_objects,
+            place_all_object_poses,
+        ) = planner.do_planning(plan)
 
         num = 2
         filename = (

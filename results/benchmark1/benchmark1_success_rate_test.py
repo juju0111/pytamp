@@ -21,9 +21,14 @@ parser.add_argument(
     help="Choose one (bai_perturb, bai_ucb, uct)",
 )
 parser.add_argument(
-    "--debug_mode", default=False, type=lambda x: (str(x).lower() == "true"), help="Debug mode"
+    "--debug_mode",
+    default=False,
+    type=lambda x: (str(x).lower() == "true"),
+    help="Debug mode",
 )
-parser.add_argument("--box_number", metavar="N", type=int, default=6, help="Box Number(6 or less)")
+parser.add_argument(
+    "--box_number", metavar="N", type=int, default=6, help="Box Number(6 or less)"
+)
 args = parser.parse_args()
 
 debug_mode = args.debug_mode
@@ -38,7 +43,9 @@ seed = args.seed
 number = args.box_number
 # np.random.seed(seed)
 
-benchmark1 = Benchmark1(robot_name="doosan", geom="collision", is_pyplot=True, box_num=number)
+benchmark1 = Benchmark1(
+    robot_name="doosan", geom="collision", is_pyplot=True, box_num=number
+)
 final_level_1_values = []
 final_level_2_values = []
 final_optimal_nodes = []

@@ -57,7 +57,9 @@ class Benchmark2(Benchmark):
 
         if self.robot_name == "doosan":
             self.robot.setup_link_name("base_0", "right_hand")
-            self.robot.init_qpos = np.array([0, -np.pi / 3, np.pi / 1.5, 0, np.pi / 3, 0])
+            self.robot.init_qpos = np.array(
+                [0, -np.pi / 3, np.pi / 1.5, 0, np.pi / 3, 0]
+            )
 
     def _load_objects(self):
         self.shelf_pose = Transform(
@@ -65,7 +67,9 @@ class Benchmark2(Benchmark):
         )
         self.bin_pose = Transform(pos=np.array([0.0, 1.0, 0.3864222]))
 
-        self.bottle_meshes = [get_object_mesh("bottle.stl") for _ in range(self.bottle_num)]
+        self.bottle_meshes = [
+            get_object_mesh("bottle.stl") for _ in range(self.bottle_num)
+        ]
         self.goal_bottle_pose = Transform(pos=np.array([1.04, 0, 1.29]))
 
         self.bottle_poses = []
@@ -149,7 +153,9 @@ class Benchmark2(Benchmark):
                 pos=np.array([0.9, 0, abs(self.shelf_mesh.bounds[0][2])]),
                 rot=np.array([0, 0, np.pi / 2]),
             )
-            self.bin_pose = Transform(pos=np.array([0.0, 1.0, abs(self.bin_mesh.bounds[0][2])]))
+            self.bin_pose = Transform(
+                pos=np.array([0.0, 1.0, abs(self.bin_mesh.bounds[0][2])])
+            )
 
             self.scene_mngr.add_object(
                 name="shelf",

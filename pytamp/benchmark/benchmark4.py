@@ -30,7 +30,15 @@ class Benchmark4(Benchmark):
         if self.robot_name == "panda":
             self.robot.setup_link_name("panda_link_0", "right_hand")
             self.robot.init_qpos = np.array(
-                [0, np.pi / 16.0, 0.00, -np.pi / 2.0 - np.pi / 3.0, 0.00, np.pi - 0.2, -np.pi / 4]
+                [
+                    0,
+                    np.pi / 16.0,
+                    0.00,
+                    -np.pi / 2.0 - np.pi / 3.0,
+                    0.00,
+                    np.pi - 0.2,
+                    -np.pi / 4,
+                ]
             )
 
         if self.robot_name == "doosan":
@@ -50,7 +58,9 @@ class Benchmark4(Benchmark):
         self.disk_heigh = self.disk_mesh_bound[1][2] - self.disk_mesh_bound[0][2]
         self.table_height = self.table_mesh.bounds[1][2] - self.table_mesh.bounds[0][2]
 
-        self.table_pose = Transform(pos=np.array([1.0, -0.6, -self.table_mesh.bounds[0][2]]))
+        self.table_pose = Transform(
+            pos=np.array([1.0, -0.6, -self.table_mesh.bounds[0][2]])
+        )
         self.peg1_pose = Transform(
             pos=np.array([0.7, 0.30, self.table_height + self.peg_mesh_bound[1][2]])
         )
@@ -103,7 +113,13 @@ class Benchmark4(Benchmark):
         # theta = np.linspace(-np.pi, np.pi, disk_num)
         for i in range(self.disk_num):
             disk_pos = np.array(
-                [0.69, 0.3, self.table_height + self.disk_mesh_bound[1][2] + self.disk_heigh * i]
+                [
+                    0.69,
+                    0.3,
+                    self.table_height
+                    + self.disk_mesh_bound[1][2]
+                    + self.disk_heigh * i,
+                ]
             )
             self.disk_pose[i] = Transform(pos=self.disk_mesh.center_mass + disk_pos)
             disk_name = "hanoi_disk_" + str(i)
@@ -122,7 +138,9 @@ class Benchmark4(Benchmark):
         for i in range(self.disk_num):
             disk_name = "hanoi_disk_" + str(i)
             if disk_name == "hanoi_disk_0":
-                self.scene_mngr.set_logical_state(disk_name, ("on", "table"), ("hang", "peg_1"))
+                self.scene_mngr.set_logical_state(
+                    disk_name, ("on", "table"), ("hang", "peg_1")
+                )
             else:
                 prev_disk_name = "hanoi_disk_" + str(i - 1)
                 self.scene_mngr.set_logical_state(
@@ -136,7 +154,8 @@ class Benchmark4(Benchmark):
             (self.scene_mngr.scene.logical_state.holding, None),
         )
         self.scene_mngr.set_logical_state(
-            self.scene_mngr.gripper_name, (self.scene_mngr.scene.logical_state.holding, None)
+            self.scene_mngr.gripper_name,
+            (self.scene_mngr.scene.logical_state.holding, None),
         )
         self.scene_mngr.update_logical_states(is_init=True)
         self.scene_mngr.show_logical_states()

@@ -37,8 +37,8 @@ class MCTS_rearrangement:
         bench_num = self.scene_mngr.scene.bench_num
 
         if bench_num == 0:
-            # robot action은 우선 패스하고 object transition만 고려해서 Goal Scene을 만족하는 
-            # state가 나올 때 까지 search!! 
+            # robot action은 우선 패스하고 object transition만 고려해서 Goal Scene을 만족하는
+            # state가 나올 때 까지 search!!
             self.rearr_action = RearrangementAction(scene_mngr)
             self.init_scene = init_scene
         if bench_num == 1:
@@ -53,7 +53,10 @@ class MCTS_rearrangement:
             )
         elif bench_num == 2:
             self.pick_action = PickAction(
-                scene_mngr, n_contacts=0, limit_angle_for_force_closure=0.02, n_directions=3
+                scene_mngr,
+                n_contacts=0,
+                limit_angle_for_force_closure=0.02,
+                n_directions=3,
             )
             self.place_action = PlaceAction(
                 scene_mngr, n_samples_held_obj=0, n_samples_support_obj=10
@@ -91,12 +94,12 @@ class MCTS_rearrangement:
         self.tree = self._create_tree(self.state)
         self.nodes = None
 
-        # benchmark에 적절한 reward setting 
+        # benchmark에 적절한 reward setting
         if self.scene_mngr.scene.bench_num == 0:
-            # when occupied 
+            # when occupied
             self.infeasible_reward = -10
             # when do appropriate placement
-            self.goal_reward = 5 
+            self.goal_reward = 5
 
         if self.scene_mngr.scene.bench_num == 1:
             self.infeasible_reward = -10
@@ -160,7 +163,9 @@ class MCTS_rearrangement:
     def do_planning_rearrange(self, iter):
         self.pick_obj_set = set()
         self.pick_obj_list = []
-        print(f"{sc.HEADER}=========== Search iteration : {iter+1} ==========={sc.ENDC}")
+        print(
+            f"{sc.HEADER}=========== Search iteration : {iter+1} ==========={sc.ENDC}"
+        )
         if self.debug_mode:
             # visited_tree = self.get_visited_subtree()
             self.visualize_tree("Next Logical Node", self.tree)
@@ -193,15 +198,17 @@ class MCTS_rearrangement:
                     # self._update_success_level_1_and_2(success_level_1_sub_nodes)
 
                     self.history_level_1_optimal_nodes.append(success_level_1_sub_nodes)
-                    self.history_level_1_values.append(self.tree.nodes[0][NodeData.VALUE_HISTORY][-1])
+                    self.history_level_1_values.append(
+                        self.tree.nodes[0][NodeData.VALUE_HISTORY][-1]
+                    )
 
-                    self.history_level_1_dict[len(self.history_level_1_dict)] =dict(
-                                                                        nodes = success_level_1_sub_nodes,
-                                                                        value = self.tree.nodes[0][NodeData.VALUE_HISTORY][-1]
-                                                                    )
+                    self.history_level_1_dict[len(self.history_level_1_dict)] = dict(
+                        nodes=success_level_1_sub_nodes,
+                        value=self.tree.nodes[0][NodeData.VALUE_HISTORY][-1],
+                    )
 
                     # self.values_for_level_2.append(
-                        # self.get_max_value_level_2(success_level_1_sub_nodes)
+                    # self.get_max_value_level_2(success_level_1_sub_nodes)
                     # )
                 else:
                     pass
@@ -211,7 +218,6 @@ class MCTS_rearrangement:
             else:
                 pass
                 # self.values_for_level_2.append(self.level2_max_value)
-        
 
     # def do_planning(self, iter):
     #     self.pick_obj_set = set()
@@ -241,8 +247,8 @@ class MCTS_rearrangement:
     #                     print("Aleady has optimal nodes!!")
     #                     self.has_aleardy_level_1_optimal_nodes = True
     #                     break
-                
-    #             # return 
+
+    #             # return
     #             ##############  check level 1 aleady found   ###############
     #             if not self.has_aleardy_level_1_optimal_nodes:
     #                 self._level_wise_2_optimize(success_level_1_sub_nodes)
@@ -300,7 +306,9 @@ class MCTS_rearrangement:
         next_state = None
 
         if cur_logical_action_node is not None:
-            cur_logical_action = self.tree.nodes.get(cur_logical_action_node).get(NodeData.ACTION)
+            cur_logical_action = self.tree.nodes.get(cur_logical_action_node).get(
+                NodeData.ACTION
+            )
 
             # if cur_logical_action[self.pick_action.info.TYPE] == "pick":
             #     print(
@@ -318,7 +326,11 @@ class MCTS_rearrangement:
             # ? Select Next State
             # *======================================================================================================================== #
             next_state_node = self._select_next_state_node(
-                cur_logical_action_node, cur_state, cur_logical_action, depth, self._sampling_method
+                cur_logical_action_node,
+                cur_state,
+                cur_logical_action,
+                depth,
+                self._sampling_method,
             )
             # assert next_state_node is not None, f"Next state node is None... Why??"
             if next_state_node is not None:
@@ -350,7 +362,8 @@ class MCTS_rearrangement:
             value = (
                 reward
                 + discount_value
-                + self.gamma * self._level_wise_1_optimize_rearr(next_state_node, depth + 1)
+                + self.gamma
+                * self._level_wise_1_optimize_rearr(next_state_node, depth + 1)
             )
 
         self._update_value(cur_state_node, value)
@@ -379,7 +392,9 @@ class MCTS_rearrangement:
             logical_action_node = np.random.choice(expanded_children)
         else:
             # print(f"Current state node has children {children}")
-            logical_action_node = self._sample_child_node(children, exploration_method, depth)
+            logical_action_node = self._sample_child_node(
+                children, exploration_method, depth
+            )
 
         return logical_action_node
 
@@ -396,7 +411,11 @@ class MCTS_rearrangement:
         #     possible_actions = list(self.place_action.get_possible_actions_level_1(cur_state))
         #     # self.render_action("Place Action", cur_state, possible_actions, is_holding)
 
-        possible_actions = list(self.rearr_action.get_possible_actions_level_1(scene = cur_state, scene_for_sample=self.init_scene))
+        possible_actions = list(
+            self.rearr_action.get_possible_actions_level_1(
+                scene=cur_state, scene_for_sample=self.init_scene
+            )
+        )
 
         for possible_action in possible_actions:
             action_node = self.tree.number_of_nodes()
@@ -445,15 +464,21 @@ class MCTS_rearrangement:
                 self._expand_next_state_node_arr(
                     cur_logical_action_node, cur_state, cur_logical_action, depth
                 )
-            expanded_children = [child for child in self.tree.neighbors(cur_logical_action_node)]
+            expanded_children = [
+                child for child in self.tree.neighbors(cur_logical_action_node)
+            ]
             if not expanded_children:
                 self.tree.nodes[cur_logical_action_node][NodeData.VISIT] += 1
-                self.tree.nodes[cur_logical_action_node][NodeData.VALUE] = self.infeasible_reward*100
+                self.tree.nodes[cur_logical_action_node][NodeData.VALUE] = (
+                    self.infeasible_reward * 100
+                )
                 return next_state_node
             next_state_node = np.random.choice(expanded_children)
         else:
             # print(f"Logical action node has children {children}")
-            next_state_node = self._sample_child_node(children, exploration_method, depth)
+            next_state_node = self._sample_child_node(
+                children, exploration_method, depth
+            )
 
         return next_state_node
 
@@ -468,12 +493,16 @@ class MCTS_rearrangement:
 
         if logical_action_type == "place":
             next_states = list(
-                self.place_action.get_possible_transitions(cur_state, cur_logical_action)
+                self.place_action.get_possible_transitions(
+                    cur_state, cur_logical_action
+                )
             )
 
         if logical_action_type == "rearr":
             next_states = list(
-                self.rearr_action.get_possible_transitions(cur_state, cur_logical_action)
+                self.rearr_action.get_possible_transitions(
+                    cur_state, cur_logical_action
+                )
             )
 
         for next_state in next_states:
@@ -484,7 +513,7 @@ class MCTS_rearrangement:
             if logical_action_type == "place":
                 cur_geometry_action = next_scene.release_poses
             if logical_action_type == "rearr":
-                cur_geometry_action = next_scene.rearr_pose
+                cur_geometry_action = next_scene.rearr_poses
 
             self.tree.add_node(next_node)
             self.tree.update(
@@ -571,7 +600,7 @@ class MCTS_rearrangement:
             print(f"Terminal State! Reward is {self.goal_reward}")
             return self.goal_reward
 
-        # reward function setting 
+        # reward function setting
         if self.scene_mngr.scene.bench_num == 0:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 2
 
@@ -603,17 +632,18 @@ class MCTS_rearrangement:
         logical_action_type = cur_logical_action[self.rearr_action.info.TYPE]
 
         if self.scene_mngr.scene.bench_num == 0:
-            # 현재 transition한 object를 받아와서 goal과 비교해야함. 
+            # 현재 transition한 object를 받아와서 goal과 비교해야함.
             prev_rearr_obj_num = len(cur_state.rearranged_object)
-            next_state_is_success = next_state.check_success_rearr_action(\
-                            cur_logical_action[self.rearr_action.info.REARR_OBJ_NAME])
-            next_rearr_obj_num = len(next_state.rearranged_object) 
+            next_state_is_success = next_state.check_success_rearr_action(
+                cur_logical_action[self.rearr_action.info.REARR_OBJ_NAME]
+            )
+            next_rearr_obj_num = len(next_state.rearranged_object)
             if logical_action_type == "rearr":
                 if next_state_is_success:
                     # When you place well on your goal
                     if next_rearr_obj_num - prev_rearr_obj_num == 1:
                         print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                        return abs(reward) * 1 / (depth+1) * 5
+                        return abs(reward) * 1 / (depth + 1) * 5
                     # When you place object on the target again
                     if next_rearr_obj_num - prev_rearr_obj_num == 0:
                         print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
@@ -622,12 +652,13 @@ class MCTS_rearrangement:
                     # When an object in the goal is moved to another place
                     if next_rearr_obj_num - prev_rearr_obj_num == -1:
                         print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                        return max(reward * 1 / (depth + 1) * 20, self.infeasible_reward)
+                        return max(
+                            reward * 1 / (depth + 1) * 20, self.infeasible_reward
+                        )
                     # When an object that was not at the goal position is moved to another location
                     if next_rearr_obj_num - prev_rearr_obj_num == 0:
                         print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
                         return reward
-
 
         if self.scene_mngr.scene.bench_num == 1:
             prev_stacked_box_num = cur_state.success_stacked_box_num
@@ -647,10 +678,12 @@ class MCTS_rearrangement:
         if self.scene_mngr.scene.bench_num == 2:
             logical_action_type = cur_logical_action[self.pick_action.info.TYPE]
             if logical_action_type == "place":
-                pick_obj_y_dis = next_state.get_pose_from_goal_obj(next_state.pick_obj_name)[1, 3]
-                prev_pick_obj_y_dis = cur_state.get_pose_from_goal_obj(next_state.pick_obj_name)[
-                    1, 3
-                ]
+                pick_obj_y_dis = next_state.get_pose_from_goal_obj(
+                    next_state.pick_obj_name
+                )[1, 3]
+                prev_pick_obj_y_dis = cur_state.get_pose_from_goal_obj(
+                    next_state.pick_obj_name
+                )[1, 3]
                 goal_obj_y_dis = cur_state.get_pose_from_goal_obj("goal_bottle")[1, 3]
                 dis_between_pick_and_goal_obj = abs(pick_obj_y_dis - goal_obj_y_dis)
 
@@ -675,7 +708,9 @@ class MCTS_rearrangement:
                 return reward
 
             if logical_action_type == "pick":
-                cur_pick_obj_name = cur_logical_action[self.pick_action.info.PICK_OBJ_NAME]
+                cur_pick_obj_name = cur_logical_action[
+                    self.pick_action.info.PICK_OBJ_NAME
+                ]
                 if cur_pick_obj_name in self.pick_obj_list:
                     print(f"{sc.FAIL}Bad Action{sc.ENDC}")
                     reward = -1
@@ -685,7 +720,9 @@ class MCTS_rearrangement:
 
         if self.scene_mngr.scene.bench_num == 3:
             if logical_action_type == "pick":
-                cur_pick_obj_name = cur_logical_action[self.pick_action.info.PICK_OBJ_NAME]
+                cur_pick_obj_name = cur_logical_action[
+                    self.pick_action.info.PICK_OBJ_NAME
+                ]
                 if cur_pick_obj_name in self.pick_obj_set:
                     print(f"{sc.FAIL}Bad Action{sc.ENDC}")
                     reward = -1
@@ -695,7 +732,9 @@ class MCTS_rearrangement:
 
         if self.scene_mngr.scene.bench_num == 4:
             if logical_action_type == "pick":
-                cur_pick_obj_name = cur_logical_action[self.pick_action.info.PICK_OBJ_NAME]
+                cur_pick_obj_name = cur_logical_action[
+                    self.pick_action.info.PICK_OBJ_NAME
+                ]
                 if self.pick_obj_list:
                     if cur_pick_obj_name == self.pick_obj_list[-1]:
                         print(f"{sc.FAIL}Bad Action{sc.ENDC}")
@@ -728,7 +767,10 @@ class MCTS_rearrangement:
             return
 
         if self.tree.nodes[0][NodeData.SUCCESS]:
-            if self.tree.nodes[0][NodeData.VALUE_HISTORY][-1] < self.tree.nodes[0][NodeData.VALUE]:
+            if (
+                self.tree.nodes[0][NodeData.VALUE_HISTORY][-1]
+                < self.tree.nodes[0][NodeData.VALUE]
+            ):
                 print(
                     f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
                 )
@@ -770,7 +812,9 @@ class MCTS_rearrangement:
                         init_theta = self.pick_action.scene_mngr.scene.robot.init_qpos
 
                     pick_joint_path = self.pick_action.get_possible_joint_path_level_2(
-                        scene=pick_scene, grasp_poses=pick_scene.grasp_poses, init_thetas=init_theta
+                        scene=pick_scene,
+                        grasp_poses=pick_scene.grasp_poses,
+                        init_thetas=init_theta,
                     )
                     if pick_joint_path:
                         success_pick = True
@@ -778,12 +822,23 @@ class MCTS_rearrangement:
                             self.pick_action.move_data.MOVE_default_grasp
                         ][-1]
 
-                        current_cost = round(self.weird_division(1, self.pick_action.cost) / 10, 6)
-                        if current_cost > self.tree.nodes[sub_optimal_node][NodeData.COST]:
-                            self.tree.nodes[sub_optimal_node][NodeData.COST] = current_cost
-                            self.tree.nodes[sub_optimal_node][NodeData.JOINTS] = pick_joint_path
+                        current_cost = round(
+                            self.weird_division(1, self.pick_action.cost) / 10, 6
+                        )
+                        if (
+                            current_cost
+                            > self.tree.nodes[sub_optimal_node][NodeData.COST]
+                        ):
+                            self.tree.nodes[sub_optimal_node][
+                                NodeData.COST
+                            ] = current_cost
+                            self.tree.nodes[sub_optimal_node][
+                                NodeData.JOINTS
+                            ] = pick_joint_path
 
-                        parent_node = [node for node in self.tree.predecessors(sub_optimal_node)][0]
+                        parent_node = [
+                            node for node in self.tree.predecessors(sub_optimal_node)
+                        ][0]
                         self.tree.nodes[sub_optimal_node][NodeData.LEVEL2] = True
                         self.tree.nodes[parent_node][NodeData.LEVEL2] = True
                         self.tree.nodes[0][NodeData.LEVEL2] = True
@@ -797,10 +852,12 @@ class MCTS_rearrangement:
                         f"{sc.COLOR_YELLOW}place {place_scene.pick_obj_name} on {place_scene.cur_place_obj_name}{sc.ENDC}"
                     )
 
-                    place_joint_path = self.place_action.get_possible_joint_path_level_2(
-                        scene=place_scene,
-                        release_poses=place_scene.release_poses,
-                        init_thetas=init_theta,
+                    place_joint_path = (
+                        self.place_action.get_possible_joint_path_level_2(
+                            scene=place_scene,
+                            release_poses=place_scene.release_poses,
+                            init_thetas=init_theta,
+                        )
                     )
                     if place_joint_path:
                         success_place = True
@@ -808,12 +865,23 @@ class MCTS_rearrangement:
                             self.place_action.move_data.MOVE_default_release
                         ][-1]
 
-                        current_cost = round(self.weird_division(1, self.place_action.cost) / 10, 6)
-                        if current_cost > self.tree.nodes[sub_optimal_node][NodeData.COST]:
-                            self.tree.nodes[sub_optimal_node][NodeData.COST] = current_cost
-                            self.tree.nodes[sub_optimal_node][NodeData.JOINTS] = place_joint_path
+                        current_cost = round(
+                            self.weird_division(1, self.place_action.cost) / 10, 6
+                        )
+                        if (
+                            current_cost
+                            > self.tree.nodes[sub_optimal_node][NodeData.COST]
+                        ):
+                            self.tree.nodes[sub_optimal_node][
+                                NodeData.COST
+                            ] = current_cost
+                            self.tree.nodes[sub_optimal_node][
+                                NodeData.JOINTS
+                            ] = place_joint_path
 
-                        parent_node = [node for node in self.tree.predecessors(sub_optimal_node)][0]
+                        parent_node = [
+                            node for node in self.tree.predecessors(sub_optimal_node)
+                        ][0]
                         self.tree.nodes[sub_optimal_node][NodeData.LEVEL2] = True
                         self.tree.nodes[parent_node][NodeData.LEVEL2] = True
                         self.tree.nodes[0][NodeData.LEVEL2] = True
@@ -834,10 +902,15 @@ class MCTS_rearrangement:
 
         if success_pick:
             if self.scene_mngr.scene.bench_num == 2:
-                print(f"{sc.COLOR_YELLOW}move {pick_scene.pick_obj_name} to bin{sc.ENDC}")
+                print(
+                    f"{sc.COLOR_YELLOW}move {pick_scene.pick_obj_name} to bin{sc.ENDC}"
+                )
                 if not self.scene_mngr.scene.has_already_final_path:
-                    self.scene_mngr.scene.ben_2_final_path = self.place_action.get_rrt_star_path(
-                        self.scene_mngr.scene.robot.init_qpos, goal_q=self.scene_mngr.scene.goal_q
+                    self.scene_mngr.scene.ben_2_final_path = (
+                        self.place_action.get_rrt_star_path(
+                            self.scene_mngr.scene.robot.init_qpos,
+                            goal_q=self.scene_mngr.scene.goal_q,
+                        )
                     )
                     self.scene_mngr.scene.has_already_final_path = True
             self.level_wise_2_success = True
@@ -854,7 +927,7 @@ class MCTS_rearrangement:
             for sub_optimal_node in sub_optimal_nodes:
                 self.tree.nodes[sub_optimal_node][NodeData.SUCCESS] = True
 
-    def get_nodes_from_leaf_node(self, leaf_node:int):
+    def get_nodes_from_leaf_node(self, leaf_node: int):
         parent_nodes = [node for node in self.tree.predecessors(leaf_node)]
         if not parent_nodes:
             return [leaf_node]
@@ -877,7 +950,9 @@ class MCTS_rearrangement:
             # print(f"Q : {[tree.nodes[child][NodeData.VALUE] for child in children]}")
             # print(f"Visit: {[tree.nodes[child][NodeData.VISIT] for child in children]}")
 
-            best_idx = np.argmax([tree.nodes[child][NodeData.VALUE] for child in children])
+            best_idx = np.argmax(
+                [tree.nodes[child][NodeData.VALUE] for child in children]
+            )
             next_node = children[best_idx]
             return [cur_node] + self.get_best_node(tree, next_node)
 
@@ -885,12 +960,16 @@ class MCTS_rearrangement:
         visited_nodes = []
         if optimizer_level == 1:
             visited_nodes = [
-                n for n in self.tree.nodes if self.tree.nodes[n][NodeData.LEVEL1] is True
+                n
+                for n in self.tree.nodes
+                if self.tree.nodes[n][NodeData.LEVEL1] is True
             ]
 
         if optimizer_level == 2:
             visited_nodes = [
-                n for n in self.tree.nodes if self.tree.nodes[n][NodeData.SUCCESS] is True
+                n
+                for n in self.tree.nodes
+                if self.tree.nodes[n][NodeData.SUCCESS] is True
             ]
 
         subtree: nx.DiGraph = self.tree.subgraph(visited_nodes)
@@ -898,13 +977,17 @@ class MCTS_rearrangement:
 
     def get_visited_subtree(self):
         visited_nodes = []
-        visited_nodes = [n for n in self.tree.nodes if self.tree.nodes[n][NodeData.VISIT] >= 1]
+        visited_nodes = [
+            n for n in self.tree.nodes if self.tree.nodes[n][NodeData.VISIT] >= 1
+        ]
 
         subtree: nx.DiGraph = self.tree.subgraph(visited_nodes)
         return subtree
 
     def get_all_leaf_nodes(self, tree: nx.DiGraph):
-        leaf_nodes = [node for node in tree.nodes if not [c for c in tree.neighbors(node)]]
+        leaf_nodes = [
+            node for node in tree.nodes if not [c for c in tree.neighbors(node)]
+        ]
         leaf_nodes.sort()
         return leaf_nodes
 
@@ -915,12 +998,12 @@ class MCTS_rearrangement:
     def get_max_value_nodes_level_1(self):
         idx = 0
         val_ = -np.inf
-        for k,v in self.history_level_1_dict.items():
-            if val_ < v['value']:
+        for k, v in self.history_level_1_dict.items():
+            if val_ < v["value"]:
                 idx = k
-                val_ = v['value']
-        
-        max_value_nodes = self.history_level_1_dict[idx]['nodes']
+                val_ = v["value"]
+
+        max_value_nodes = self.history_level_1_dict[idx]["nodes"]
         return idx, max_value_nodes
 
     def get_max_value_level_2(self, sub_optimal_nodes):
@@ -933,25 +1016,36 @@ class MCTS_rearrangement:
                     else "state"
                 )
                 if node_type == NodeData.ACTION:
-                    sate_nodes = [child for child in self.tree.neighbors(sub_optimal_node)]
+                    sate_nodes = [
+                        child for child in self.tree.neighbors(sub_optimal_node)
+                    ]
                     if not sate_nodes:
                         break
                     max_state_node_idx = np.argmax(
-                        [self.tree.nodes[sate_node][NodeData.VALUE] for sate_node in sate_nodes]
+                        [
+                            self.tree.nodes[sate_node][NodeData.VALUE]
+                            for sate_node in sate_nodes
+                        ]
                     )
                     max_state_node = sate_nodes[max_state_node_idx]
                     if self.tree.nodes[max_state_node][NodeData.SUCCESS]:
-                        max_state_value = self.tree.nodes[max_state_node][NodeData.VALUE]
+                        max_state_value = self.tree.nodes[max_state_node][
+                            NodeData.VALUE
+                        ]
                         if (
                             self.tree.nodes[sub_optimal_nodes[idx + 1]][NodeData.VALUE]
                             >= max_state_value
                         ):
-                            value_sum += self.tree.nodes[sub_optimal_nodes[idx + 1]][NodeData.COST]
+                            value_sum += self.tree.nodes[sub_optimal_nodes[idx + 1]][
+                                NodeData.COST
+                            ]
                         else:
                             value_sum = 0
                             break
                 if node_type == NodeData.STATE:
-                    action_nodes = [child for child in self.tree.neighbors(sub_optimal_node)]
+                    action_nodes = [
+                        child for child in self.tree.neighbors(sub_optimal_node)
+                    ]
                     if not action_nodes:
                         break
                     max_action_node_idx = np.argmax(
@@ -962,7 +1056,9 @@ class MCTS_rearrangement:
                     )
                     max_action_node = action_nodes[max_action_node_idx]
                     if self.tree.nodes[max_action_node][NodeData.SUCCESS]:
-                        max_action_value = self.tree.nodes[max_action_node][NodeData.VALUE]
+                        max_action_value = self.tree.nodes[max_action_node][
+                            NodeData.VALUE
+                        ]
                         if (
                             self.tree.nodes[sub_optimal_nodes[idx + 1]][NodeData.VALUE]
                             < max_action_value
@@ -994,7 +1090,11 @@ class MCTS_rearrangement:
 
         pick_joint_path = []
         for node in nodes:
-            node_type = "action" if self.tree.nodes[node]["type"] == NodeData.ACTION else "state"
+            node_type = (
+                "action"
+                if self.tree.nodes[node]["type"] == NodeData.ACTION
+                else "state"
+            )
             if node_type == NodeData.ACTION:
                 continue
             action = self.tree.nodes[node].get(NodeData.ACTION)
@@ -1042,7 +1142,10 @@ class MCTS_rearrangement:
         for n in tree.nodes:
             if tree.nodes[n][NodeData.ACTION] is not None:
                 if tree.nodes[n][NodeData.TYPE] == "action":
-                    if self.tree.nodes[n][NodeData.ACTION][self.rearr_action.info.TYPE] == "pick":
+                    if (
+                        self.tree.nodes[n][NodeData.ACTION][self.rearr_action.info.TYPE]
+                        == "pick"
+                    ):
                         labels.update(
                             {
                                 n: "Type:{}\nNode:{:d}\nDepth:{:d}\nVisit:{:d}\nValue:{:.2f}\nAction:({} {})\nLevel1:{}\nLevel2:{}".format(
@@ -1051,7 +1154,9 @@ class MCTS_rearrangement:
                                     tree.nodes[n][NodeData.DEPTH],
                                     tree.nodes[n][NodeData.VISIT],
                                     tree.nodes[n][NodeData.VALUE],
-                                    tree.nodes[n][NodeData.ACTION][self.rearr_action.info.TYPE],
+                                    tree.nodes[n][NodeData.ACTION][
+                                        self.rearr_action.info.TYPE
+                                    ],
                                     tree.nodes[n][NodeData.ACTION][
                                         self.rearr_action.info.PICK_OBJ_NAME
                                     ],
@@ -1061,7 +1166,10 @@ class MCTS_rearrangement:
                             }
                         )
 
-                    if tree.nodes[n][NodeData.ACTION][self.rearr_action.info.TYPE] == "place":
+                    if (
+                        tree.nodes[n][NodeData.ACTION][self.rearr_action.info.TYPE]
+                        == "place"
+                    ):
                         labels.update(
                             {
                                 n: "Type:{}\nNode:{:d}\nDepth:{:d}\nVisit:{:d}\nValue:{:.2f}\nAction:({} {} on {})\nLevel1:{}\nLevel2:{}".format(
@@ -1070,7 +1178,9 @@ class MCTS_rearrangement:
                                     tree.nodes[n][NodeData.DEPTH],
                                     tree.nodes[n][NodeData.VISIT],
                                     tree.nodes[n][NodeData.VALUE],
-                                    tree.nodes[n][NodeData.ACTION][self.rearr_action.info.TYPE],
+                                    tree.nodes[n][NodeData.ACTION][
+                                        self.rearr_action.info.TYPE
+                                    ],
                                     tree.nodes[n][NodeData.ACTION][
                                         self.rearr_action.info.HELD_OBJ_NAME
                                     ],
@@ -1083,7 +1193,10 @@ class MCTS_rearrangement:
                             }
                         )
 
-                    if tree.nodes[n][NodeData.ACTION][self.rearr_action.info.TYPE] == "rearr":
+                    if (
+                        tree.nodes[n][NodeData.ACTION][self.rearr_action.info.TYPE]
+                        == "rearr"
+                    ):
                         labels.update(
                             {
                                 n: "Type:{}\nNode:{:d}\nDepth:{:d}\nVisit:{:d}\nValue:{:.2f}\nAction:({} on {})\nLevel1:{}\nLevel2:{}".format(
@@ -1092,7 +1205,9 @@ class MCTS_rearrangement:
                                     tree.nodes[n][NodeData.DEPTH],
                                     tree.nodes[n][NodeData.VISIT],
                                     tree.nodes[n][NodeData.VALUE],
-                                    tree.nodes[n][NodeData.ACTION][self.rearr_action.info.TYPE],
+                                    tree.nodes[n][NodeData.ACTION][
+                                        self.rearr_action.info.TYPE
+                                    ],
                                     tree.nodes[n][NodeData.ACTION][
                                         self.rearr_action.info.REARR_OBJ_NAME
                                     ],
@@ -1184,7 +1299,9 @@ class MCTS_rearrangement:
                     )
         else:
             for place_action in actions:
-                for release_pose, obj_pose in place_action[self.place_action.info.RELEASE_POSES]:
+                for release_pose, obj_pose in place_action[
+                    self.place_action.info.RELEASE_POSES
+                ]:
                     self.place_action.scene_mngr.render.render_axis(
                         ax, release_pose[self.place_action.move_data.MOVE_release]
                     )
@@ -1217,13 +1334,11 @@ class MCTS_rearrangement:
         if self.scene_mngr.is_pyplot is True:
             fig, ax = p_utils.init_3d_figure(name=title)
 
-        self.rearr_action.scene_mngr.scene = \
-                self.tree.nodes[nodes[-1]]['state']
+        self.rearr_action.scene_mngr.scene = self.tree.nodes[nodes[-1]]["state"]
 
         for i in nodes:
-            if self.tree.nodes[i]['type'] == 'state':
-                self.render_rearr_state(ax, f"{i}",self.tree.nodes[i]['state'])
-
+            if self.tree.nodes[i]["type"] == "state":
+                self.render_rearr_state(ax, f"{i}", self.tree.nodes[i]["state"])
 
     @staticmethod
     def weird_division(n, d):
