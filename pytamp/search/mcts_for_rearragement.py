@@ -51,38 +51,38 @@ class MCTS_rearrangement:
                 release_distance=0.02,
                 retreat_distance=0.15,
             )
-        elif bench_num == 2:
-            self.pick_action = PickAction(
-                scene_mngr,
-                n_contacts=0,
-                limit_angle_for_force_closure=0.02,
-                n_directions=3,
-            )
-            self.place_action = PlaceAction(
-                scene_mngr, n_samples_held_obj=0, n_samples_support_obj=10
-            )
-        elif bench_num == 3:
-            self.pick_action = PickAction(
-                scene_mngr, n_contacts=0, n_directions=3, retreat_distance=0.15
-            )
-            self.place_action = PlaceAction(
-                scene_mngr,
-                n_samples_held_obj=0,
-                n_samples_support_obj=0,
-                retreat_distance=0.2,
-                n_directions=3,
-            )
-        elif bench_num == 4:
-            self.pick_action = PickAction(
-                scene_mngr, n_contacts=0, n_directions=0, retreat_distance=0.15
-            )
-            self.place_action = PlaceAction(
-                scene_mngr,
-                n_samples_held_obj=0,
-                n_samples_support_obj=0,
-                retreat_distance=0.2,
-                n_directions=3,
-            )
+        # elif bench_num == 2:
+        #     self.pick_action = PickAction(
+        #         scene_mngr,
+        #         n_contacts=0,
+        #         limit_angle_for_force_closure=0.02,
+        #         n_directions=3,
+        #     )
+        #     self.place_action = PlaceAction(
+        #         scene_mngr, n_samples_held_obj=0, n_samples_support_obj=10
+        #     )
+        # elif bench_num == 3:
+        #     self.pick_action = PickAction(
+        #         scene_mngr, n_contacts=0, n_directions=3, retreat_distance=0.15
+        #     )
+        #     self.place_action = PlaceAction(
+        #         scene_mngr,
+        #         n_samples_held_obj=0,
+        #         n_samples_support_obj=0,
+        #         retreat_distance=0.2,
+        #         n_directions=3,
+        #     )
+        # elif bench_num == 4:
+        #     self.pick_action = PickAction(
+        #         scene_mngr, n_contacts=0, n_directions=0, retreat_distance=0.15
+        #     )
+        #     self.place_action = PlaceAction(
+        #         scene_mngr,
+        #         n_samples_held_obj=0,
+        #         n_samples_support_obj=0,
+        #         retreat_distance=0.2,
+        #         n_directions=3,
+        #     )
 
         self._sampling_method = sampling_method
         self._budgets = budgets
@@ -101,21 +101,21 @@ class MCTS_rearrangement:
             # when do appropriate placement
             self.goal_reward = 5
 
-        if self.scene_mngr.scene.bench_num == 1:
-            self.infeasible_reward = -10
-            self.goal_reward = 5
+        # if self.scene_mngr.scene.bench_num == 1:
+        #     self.infeasible_reward = -10
+        #     self.goal_reward = 5
 
-        if self.scene_mngr.scene.bench_num == 2:
-            self.infeasible_reward = -5
-            self.goal_reward = 5
+        # if self.scene_mngr.scene.bench_num == 2:
+        #     self.infeasible_reward = -5
+        #     self.goal_reward = 5
 
-        if self.scene_mngr.scene.bench_num == 3:
-            self.infeasible_reward = -5
-            self.goal_reward = 10
+        # if self.scene_mngr.scene.bench_num == 3:
+        #     self.infeasible_reward = -5
+        #     self.goal_reward = 10
 
-        if self.scene_mngr.scene.bench_num == 4:
-            self.infeasible_reward = -5
-            self.goal_reward = 15
+        # if self.scene_mngr.scene.bench_num == 4:
+        #     self.infeasible_reward = -5
+        #     self.goal_reward = 15
 
         self.values_for_level_1 = []
         self.values_for_level_2 = []
@@ -161,6 +161,10 @@ class MCTS_rearrangement:
         return tree
 
     def do_planning_rearrange(self, iter):
+        """
+        MCTS level 1 planning for rearrangement
+
+        """
         self.pick_obj_set = set()
         self.pick_obj_list = []
         print(f"{sc.HEADER}=========== Search iteration : {iter+1} ==========={sc.ENDC}")
@@ -177,11 +181,13 @@ class MCTS_rearrangement:
 
         if not self.only_optimize_1:
             success_level_1_sub_nodes = None
+            
+            # get level 1 node seqeunce 
             if self.level_wise_1_success:
                 success_level_1_sub_nodes = self.get_nodes_from_leaf_node(
                     self.success_level_1_leaf_node
                 )[::-1]
-
+                
                 self.has_aleardy_level_1_optimal_nodes = False
                 for level_1_optimal_nodes in self.history_level_1_optimal_nodes:
                     if set(success_level_1_sub_nodes).issubset(level_1_optimal_nodes):
@@ -189,7 +195,7 @@ class MCTS_rearrangement:
                         self.has_aleardy_level_1_optimal_nodes = True
                         break
 
-                ##############  check level 1 aleady found   ###############
+                ##############  check level 1 already found   ###############
 
                 if not self.has_aleardy_level_1_optimal_nodes:
                     # self._level_wise_2_optimize(success_level_1_sub_nodes)
@@ -199,7 +205,6 @@ class MCTS_rearrangement:
                     self.history_level_1_values.append(
                         self.tree.nodes[0][NodeData.VALUE_HISTORY][-1]
                     )
-
                     self.history_level_1_dict[len(self.history_level_1_dict)] = dict(
                         nodes=success_level_1_sub_nodes,
                         value=self.tree.nodes[0][NodeData.VALUE_HISTORY][-1],
@@ -217,56 +222,17 @@ class MCTS_rearrangement:
                 pass
                 # self.values_for_level_2.append(self.level2_max_value)
 
-    # def do_planning(self, iter):
-    #     self.pick_obj_set = set()
-    #     self.pick_obj_list = []
-    #     print(f"{sc.HEADER}=========== Search iteration : {iter+1} ==========={sc.ENDC}")
-    #     if self.debug_mode:
-    #         # visited_tree = self.get_visited_subtree()
-    #         self.visualize_tree("Next Logical Node", self.tree)
-    #     self.success_level_1_leaf_node = None
 
-    #     self._level_wise_1_optimize(state_node=0, depth=0)
-    #     max_level_1_value = self.get_max_value_level_1()
-    #     self.values_for_level_1.append(max_level_1_value)
+    def _level_wise_1_optimize_rearr(self, state_node : int, depth : int):
+        """
+        MCTS level 1 reculsive function
 
-    #     ############  level 1 ################
-
-    #     if not self.only_optimize_1:
-    #         success_level_1_sub_nodes = None
-    #         if self.level_wise_1_success:
-    #             success_level_1_sub_nodes = self.get_nodes_from_leaf_node(
-    #                 self.success_level_1_leaf_node
-    #             )[::-1]
-
-    #             self.has_aleardy_level_1_optimal_nodes = False
-    #             for level_1_optimal_nodes in self.history_level_1_optimal_nodes:
-    #                 if set(success_level_1_sub_nodes).issubset(level_1_optimal_nodes):
-    #                     print("Aleady has optimal nodes!!")
-    #                     self.has_aleardy_level_1_optimal_nodes = True
-    #                     break
-
-    #             # return
-    #             ##############  check level 1 aleady found   ###############
-    #             if not self.has_aleardy_level_1_optimal_nodes:
-    #                 self._level_wise_2_optimize(success_level_1_sub_nodes)
-    #                 self._update_success_level_1_and_2(success_level_1_sub_nodes)
-    #                 self.history_level_1_optimal_nodes.append(success_level_1_sub_nodes)
-    #                 self.values_for_level_2.append(
-    #                     self.get_max_value_level_2(success_level_1_sub_nodes)
-    #                 )
-    #             else:
-    #                 self.values_for_level_2.append(self.level2_max_value)
-
-    #             self.level_wise_1_success = False
-    #         else:
-    #             self.values_for_level_2.append(self.level2_max_value)
-
-    #     # if (iter+1) % 40 == 0:
-    #     #     subtree = self.get_success_subtree()
-    #     #     self.visualize_tree('Test', tree=subtree)
-
-    def _level_wise_1_optimize_rearr(self, state_node, depth):
+        Args
+            state_node (int) : current state node number in tree
+            depth (int) : current depth in tree
+        return 
+            value (float) : current state value
+        """
         cur_state_node = state_node
         cur_state: Scene = self.tree.nodes[cur_state_node][NodeData.STATE]
 
@@ -369,8 +335,20 @@ class MCTS_rearrangement:
         return value
 
     def _select_logical_action_node_rearr(
-        self, cur_state_node, cur_state, depth, exploration_method="bai_ucb"
+        self, cur_state_node : int, cur_state : Scene, depth : int , exploration_method : str="bai_ucb"
     ):
+        """
+        A function that selects possible action nodes from the current state node
+
+        Args
+            cur_state_node : node num in tree
+            cur_state : current state's scene 
+            depth : current state node's depth 
+            exploration_method
+        Return
+            logical_action_node : Action Nodes from Current State Nodes 
+
+        """
         # e-greedy, softmax
         cur_Visit = self.tree.nodes[cur_state_node][NodeData.VISIT]
         children = [child for child in self.tree.neighbors(cur_state_node)]
@@ -391,7 +369,16 @@ class MCTS_rearrangement:
 
         return logical_action_node
 
-    def _expand_action_node_rearr(self, cur_state_node, cur_state: Scene, depth):
+    def _expand_action_node_rearr(self, cur_state_node: int, cur_state: Scene, depth: int):
+        """
+        A function that creates possible action nodes from the current state node visited for the first time.
+
+        Args
+            cur_state_node : node num in tree
+            cur_state : current state's scene 
+            depth : current state node's depth 
+
+        """
         # is_holding = (
         #     cur_state.logical_states[cur_state.robot.gripper.name][cur_state.logical_state.holding]
         #     is not None
@@ -446,6 +433,17 @@ class MCTS_rearrangement:
         depth,
         exploration_method="bai_ucb",
     ):
+        """
+        A function that creates next_state with an action selected from among several actions in the current action node
+        
+        Args
+            cur_logical_action_node (int) : node num in tree
+            cur_state (Scene) 
+            cur_logical_action (dict) : set of possible actions
+            depth (int)
+            exploration_method (str)
+
+        """
         next_state_node = None
 
         children = [child for child in self.tree.neighbors(cur_logical_action_node)]
@@ -472,8 +470,18 @@ class MCTS_rearrangement:
         return next_state_node
 
     def _expand_next_state_node_arr(
-        self, cur_logical_action_node, cur_state: Scene, cur_logical_action, depth
+        self, cur_logical_action_node: int, cur_state: Scene, cur_logical_action: dict, depth: int
     ):
+        """
+        A function that expands the next state node from the first visited action node
+
+        Args
+            cur_logical_action_node (int) 
+            cur_state (Scene) 
+            cur_logical_action (dict)
+            depth (int)
+
+        """
         logical_action_type = cur_logical_action[self.rearr_action.info.TYPE]
         if logical_action_type == "pick":
             next_states = list(
@@ -568,6 +576,9 @@ class MCTS_rearrangement:
 
     @staticmethod
     def _is_terminal(state: Scene):
+        """
+        Check whether the current state node state is the goal state or not
+        """
         if state.is_terminal_state():
             return True
         return False
@@ -658,68 +669,68 @@ class MCTS_rearrangement:
                     print(f"{sc.FAIL}Bad Action{sc.ENDC}")
                     return max(reward * 1 / (depth + 1) * 40, self.infeasible_reward)
 
-        if self.scene_mngr.scene.bench_num == 2:
-            logical_action_type = cur_logical_action[self.pick_action.info.TYPE]
-            if logical_action_type == "place":
-                pick_obj_y_dis = next_state.get_pose_from_goal_obj(next_state.pick_obj_name)[1, 3]
-                prev_pick_obj_y_dis = cur_state.get_pose_from_goal_obj(next_state.pick_obj_name)[
-                    1, 3
-                ]
-                goal_obj_y_dis = cur_state.get_pose_from_goal_obj("goal_bottle")[1, 3]
-                dis_between_pick_and_goal_obj = abs(pick_obj_y_dis - goal_obj_y_dis)
+        # if self.scene_mngr.scene.bench_num == 2:
+        #     logical_action_type = cur_logical_action[self.pick_action.info.TYPE]
+        #     if logical_action_type == "place":
+        #         pick_obj_y_dis = next_state.get_pose_from_goal_obj(next_state.pick_obj_name)[1, 3]
+        #         prev_pick_obj_y_dis = cur_state.get_pose_from_goal_obj(next_state.pick_obj_name)[
+        #             1, 3
+        #         ]
+        #         goal_obj_y_dis = cur_state.get_pose_from_goal_obj("goal_bottle")[1, 3]
+        #         dis_between_pick_and_goal_obj = abs(pick_obj_y_dis - goal_obj_y_dis)
 
-                if dis_between_pick_and_goal_obj > 0.2:
-                    if pick_obj_y_dis - goal_obj_y_dis < 0:
-                        if pick_obj_y_dis - prev_pick_obj_y_dis < 0:
-                            print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                            reward = abs(reward) * 1 / (depth + 1) * 2
-                        else:
-                            print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                            reward = -1
-                    if pick_obj_y_dis - goal_obj_y_dis > 0:
-                        if pick_obj_y_dis - prev_pick_obj_y_dis > 0:
-                            print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                            reward = abs(reward) * 1 / (depth + 1) * 2
-                        else:
-                            print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                            reward = -1
-                else:
-                    print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                    reward = -1
-                return reward
+        #         if dis_between_pick_and_goal_obj > 0.2:
+        #             if pick_obj_y_dis - goal_obj_y_dis < 0:
+        #                 if pick_obj_y_dis - prev_pick_obj_y_dis < 0:
+        #                     print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
+        #                     reward = abs(reward) * 1 / (depth + 1) * 2
+        #                 else:
+        #                     print(f"{sc.FAIL}Bad Action{sc.ENDC}")
+        #                     reward = -1
+        #             if pick_obj_y_dis - goal_obj_y_dis > 0:
+        #                 if pick_obj_y_dis - prev_pick_obj_y_dis > 0:
+        #                     print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
+        #                     reward = abs(reward) * 1 / (depth + 1) * 2
+        #                 else:
+        #                     print(f"{sc.FAIL}Bad Action{sc.ENDC}")
+        #                     reward = -1
+        #         else:
+        #             print(f"{sc.FAIL}Bad Action{sc.ENDC}")
+        #             reward = -1
+        #         return reward
 
-            if logical_action_type == "pick":
-                cur_pick_obj_name = cur_logical_action[self.pick_action.info.PICK_OBJ_NAME]
-                if cur_pick_obj_name in self.pick_obj_list:
-                    print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                    reward = -1
-                else:
-                    reward = 1
-                self.pick_obj_list.append(cur_pick_obj_name)
+        #     if logical_action_type == "pick":
+        #         cur_pick_obj_name = cur_logical_action[self.pick_action.info.PICK_OBJ_NAME]
+        #         if cur_pick_obj_name in self.pick_obj_list:
+        #             print(f"{sc.FAIL}Bad Action{sc.ENDC}")
+        #             reward = -1
+        #         else:
+        #             reward = 1
+        #         self.pick_obj_list.append(cur_pick_obj_name)
 
-        if self.scene_mngr.scene.bench_num == 3:
-            if logical_action_type == "pick":
-                cur_pick_obj_name = cur_logical_action[self.pick_action.info.PICK_OBJ_NAME]
-                if cur_pick_obj_name in self.pick_obj_set:
-                    print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                    reward = -1
-                else:
-                    reward = 2
-                self.pick_obj_set.add(cur_pick_obj_name)
+        # if self.scene_mngr.scene.bench_num == 3:
+        #     if logical_action_type == "pick":
+        #         cur_pick_obj_name = cur_logical_action[self.pick_action.info.PICK_OBJ_NAME]
+        #         if cur_pick_obj_name in self.pick_obj_set:
+        #             print(f"{sc.FAIL}Bad Action{sc.ENDC}")
+        #             reward = -1
+        #         else:
+        #             reward = 2
+        #         self.pick_obj_set.add(cur_pick_obj_name)
 
-        if self.scene_mngr.scene.bench_num == 4:
-            if logical_action_type == "pick":
-                cur_pick_obj_name = cur_logical_action[self.pick_action.info.PICK_OBJ_NAME]
-                if self.pick_obj_list:
-                    if cur_pick_obj_name == self.pick_obj_list[-1]:
-                        print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                        # reward = max(reward * 1/(depth+1) * 20, self.infeasible_reward)
-                        reward = -1
-                    else:
-                        print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                        # reward = abs(reward) * 1/(depth+1) * 10
-                        reward = 2
-                self.pick_obj_list.append(cur_pick_obj_name)
+        # if self.scene_mngr.scene.bench_num == 4:
+        #     if logical_action_type == "pick":
+        #         cur_pick_obj_name = cur_logical_action[self.pick_action.info.PICK_OBJ_NAME]
+        #         if self.pick_obj_list:
+        #             if cur_pick_obj_name == self.pick_obj_list[-1]:
+        #                 print(f"{sc.FAIL}Bad Action{sc.ENDC}")
+        #                 # reward = max(reward * 1/(depth+1) * 20, self.infeasible_reward)
+        #                 reward = -1
+        #             else:
+        #                 print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
+        #                 # reward = abs(reward) * 1/(depth+1) * 10
+        #                 reward = 2
+        #         self.pick_obj_list.append(cur_pick_obj_name)
 
         # if self.scene_mngr.scene.bench_num == 4:
         #     if logical_action_type == 'place':

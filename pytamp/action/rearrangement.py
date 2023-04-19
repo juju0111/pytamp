@@ -62,6 +62,15 @@ class RearrangementAction(ActivityBase):
     def get_action_level_1_for_single_object(
         self, obj_name: str = None, scene_for_sample: Make_Scene = None
     ) -> dict:
+        """
+        A function to get the possible actions for the desired object
+
+        Args 
+            obj_name : which object do you want
+            scene_for_sample : scene made by Acronym scene.
+        Return 
+            action : Collision free actions
+        """
         # return possible position
 
         # get_goal_location
@@ -76,6 +85,14 @@ class RearrangementAction(ActivityBase):
         return action
 
     def get_goal_location(self, obj_name: str) -> dict:
+        """
+        A function that gets a known position from a given goal scene
+        
+        Args
+            obj_name :
+        Return
+            goal_location :
+        """
         if self.scene_mngr.scene.robot.has_gripper is None:
             raise ValueError("Robot doesn't have a gripper")
 
@@ -86,9 +103,15 @@ class RearrangementAction(ActivityBase):
     def get_arbitrary_location(
         self, obj_name: str, scene_for_sample: Make_Scene = None, sample_num: int = 0
     ) -> dict:
-        # random location sample
         """
         Sample arbitrary location how many you want
+
+        Args
+            obj_name (str)
+            scene_for_sample (Make_Scene) : Acronym trimesh scene
+            sample_num (int)
+        Return
+            location : arbitrary location on the table
         """
         total_location = []
         for i in range(sample_num):
@@ -112,33 +135,40 @@ class RearrangementAction(ActivityBase):
 
     def get_possible_transitions(self, scene: Scene = None, action: dict = {}):
         """
-        working on table top_scene
+        working on table top_scene 
         Args:
-            scene : scene.
-            action : Assigned object target position
+            scene (Scene) : Current scene where the assigned object was not moved
+            action (dict) : Assigned object target position
         Returns:
-            next_scene : moved
+            next_scene : The scene where the assigned object was moved
         """
         if not action:
             ValueError("Not found any action!!")
-
+        name = action[self.info.REARR_OBJ_NAME]
+        c_T_w = t_utils.get_inverse_homogeneous(scene.objs[name].h_mat)
+        
         for rearr_pose in action[self.info.REARR_POSES]:
-            for name, pose in rearr_pose.items():
-                next_scene = deepcopy(scene)
-                next_scene.rearr_poses = rearr_pose
+            next_scene = deepcopy(scene)
 
-            if pose is not None:
-                c_T_w = t_utils.get_inverse_homogeneous(self.scene_mngr.scene.objs[name].h_mat)
+            pose = rearr_pose[name]
+            next_scene.rearr_poses = rearr_pose
 
-                transform_from_cur_to_goal = c_T_w.dot(pose)
-                next_scene.transform_from_cur_to_goal = transform_from_cur_to_goal
+            next_scene.transform_from_cur_to_goal = c_T_w.dot(pose)
 
-                # Move object to goal location
-                next_scene.objs[name].h_mat = deepcopy(pose)
-
+            # Move object to goal location
+            next_scene.objs[name].h_mat = deepcopy(pose)
+            
             yield next_scene
 
     def get_goal_location_not_collision(self, location: list):
+        """
+        Collision check when an object is moved to a specific location
+        Args
+            location : want to move to a specific location
+        Return
+            location : not collide with current scene. 
+
+        """
         for i in location:
             for obj_name, goal_pose in i.items():
                 is_collision = False
