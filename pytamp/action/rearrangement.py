@@ -68,9 +68,7 @@ class RearrangementAction(ActivityBase):
         goal_location = self.get_goal_location(obj_name=obj_name)
 
         # sample_arbitrary_location
-        location = list(
-            self.get_arbitrary_location(obj_name, scene_for_sample, sample_num=1)
-        )
+        location = list(self.get_arbitrary_location(obj_name, scene_for_sample, sample_num=1))
         location.append(goal_location)
 
         grasp_poses_not_collision = list(self.get_goal_location_not_collision(location))
@@ -93,7 +91,7 @@ class RearrangementAction(ActivityBase):
         Sample arbitrary location how many you want
         """
         total_location = []
-        for i in range(num):
+        for i in range(sample_num):
             location = {}
             result, pose = scene_for_sample.find_object_placement(
                 self.scene_mngr.scene.objs[obj_name].gparam,
@@ -130,9 +128,7 @@ class RearrangementAction(ActivityBase):
                 next_scene.rearr_poses = rearr_pose
 
             if pose is not None:
-                c_T_w = t_utils.get_inverse_homogeneous(
-                    self.scene_mngr.scene.objs[name].h_mat
-                )
+                c_T_w = t_utils.get_inverse_homogeneous(self.scene_mngr.scene.objs[name].h_mat)
 
                 transform_from_cur_to_goal = c_T_w.dot(pose)
                 next_scene.transform_from_cur_to_goal = transform_from_cur_to_goal
