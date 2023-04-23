@@ -52,6 +52,7 @@ class Scene:
         self.rearr_poses = None
 
         self.pick_obj_name = None
+        self.rearr_obj_name = None
         self.cur_place_obj_name = None
         self.prev_place_obj_name = []
         self.pick_obj_default_pose = None

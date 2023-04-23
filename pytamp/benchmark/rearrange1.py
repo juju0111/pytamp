@@ -28,8 +28,10 @@ class Rearrange1(Benchmark):
         Args :
             robot_name (str) : robot name to use
             object_names : object name list on the support object
-            scene (Scene for Acronym) :
+            init_scene (Scene for Acronym) 
+            goal_scene (Scene for Acronym)
         """
+
         self.object_names = object_names
         self.param = {
             "object_names": self.object_names,
@@ -37,16 +39,19 @@ class Rearrange1(Benchmark):
         }
         self.benchmark_config = {0: self.param}
         self.init_scene = init_scene
-        self.goal_scene = goal_scene
         self.obj_colors = None
         super().__init__(robot_name, geom, is_pyplot, self.benchmark_config)
 
         self._load_robot()
         self._load_objects()
         self._load_scene(self.init_scene, self.scene_mngr)
-        # goal_scene_mngr가 필요할까? 궂이 ?
-        # 처음 scene_mngr 생성 시, scene.mngr.scene에서 goal 조건 셋팅해서 따로 필요없을 거 같은데.
+
+        self.scene_mngr.scene._init_bench_rearrange()
+
+        # 처음 scene_mngr 생성 시, scene.mngr.scene에서 goal 조건 셋팅해서 따로 필요없음
+        # 단지 시각화 위해서만 잠깐 쓰임. 없어도 됨.
         # define goal_scene
+        self.goal_scene = goal_scene
         self.goal_scene_mngr = SceneManager(
             self.geom,
             is_pyplot=self.is_pyplot,
@@ -54,8 +59,6 @@ class Rearrange1(Benchmark):
             debug_mode=True,
         )
         self._load_scene(self.goal_scene, self.goal_scene_mngr)
-
-        self.scene_mngr.scene._init_bench_rearrange()
 
     def _load_robot(self):
         self.robot = SingleArm(
@@ -97,8 +100,8 @@ class Rearrange1(Benchmark):
         for o_name, o_pose in self.init_scene._poses.items():
             self.init_scene._poses[o_name] = self.table_pose.h_mat @ o_pose
 
-        for o_name, o_pose in self.goal_scene._poses.items():
-            self.goal_scene._poses[o_name] = self.table_pose.h_mat @ o_pose
+        for o_name, o_pose in self.param["goal_scene"].items():
+            self.param["goal_scene"][o_name] = self.table_pose.h_mat @ o_pose
 
         # assign color
         self.init_scene.colorize()

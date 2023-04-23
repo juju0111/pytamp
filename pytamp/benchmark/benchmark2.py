@@ -123,8 +123,7 @@ class Benchmark2(Benchmark):
                     (self.scene_mngr.scene.logical_state.static, True),
                 )
                 self.scene_mngr.set_logical_state(
-                    f"bin_" + str(i),
-                    (self.scene_mngr.scene.logical_state.static, True),
+                    f"bin_" + str(i), (self.scene_mngr.scene.logical_state.static, True)
                 )
 
             for i in range(self.bottle_num - 1):

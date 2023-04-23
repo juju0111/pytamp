@@ -12,10 +12,7 @@ from pytamp.utils.making_scene_utils import Make_Scene
 
 
 class RearrangementAction(ActivityBase):
-    def __init__(
-        self,
-        scene_mngr,
-    ):
+    def __init__(self, scene_mngr):
         super().__init__(scene_mngr)
 
         self.filter_logical_states = [
@@ -48,6 +45,9 @@ class RearrangementAction(ActivityBase):
                 self.scene_mngr.set_object_pose(obj_name, obj.h_mat)
 
         for obj_name in self.scene_mngr.scene.objs:
+            if obj_name == self.scene_mngr.scene.rearr_obj_name:
+                continue
+
             if not any(
                 logical_state in self.scene_mngr.scene.logical_states[obj_name]
                 for logical_state in self.filter_logical_states
@@ -77,7 +77,9 @@ class RearrangementAction(ActivityBase):
         goal_location = self.get_goal_location(obj_name=obj_name)
 
         # sample_arbitrary_location
-        location = list(self.get_arbitrary_location(obj_name, scene_for_sample, sample_num=1))
+        location = list(
+            self.get_arbitrary_location(obj_name, scene_for_sample, sample_num=1)
+        )
         location.append(goal_location)
 
         grasp_poses_not_collision = list(self.get_goal_location_not_collision(location))
@@ -146,10 +148,10 @@ class RearrangementAction(ActivityBase):
             ValueError("Not found any action!!")
         name = action[self.info.REARR_OBJ_NAME]
         c_T_w = t_utils.get_inverse_homogeneous(scene.objs[name].h_mat)
-        
+
         for rearr_pose in action[self.info.REARR_POSES]:
             next_scene = deepcopy(scene)
-
+            next_scene.rearr_obj_name = name
             pose = rearr_pose[name]
             next_scene.rearr_poses = rearr_pose
 
@@ -157,7 +159,7 @@ class RearrangementAction(ActivityBase):
 
             # Move object to goal location
             next_scene.objs[name].h_mat = deepcopy(pose)
-            
+
             yield next_scene
 
     def get_goal_location_not_collision(self, location: list):

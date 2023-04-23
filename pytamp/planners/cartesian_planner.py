@@ -130,7 +130,7 @@ class CartesianPlanner(Planner):
                 )
                 J_dls = np.dot(
                     J.T,
-                    np.linalg.inv(np.dot(J, J.T) + self._damping**2 * np.identity(6)),
+                    np.linalg.inv(np.dot(J, J.T) + self._damping ** 2 * np.identity(6)),
                 )
 
                 dq = np.dot(J_dls, err_pose)
