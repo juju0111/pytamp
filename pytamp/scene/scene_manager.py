@@ -66,6 +66,7 @@ class SceneManager:
             self._scene.objs[name] = Object(name, gtype, gparam, h_mat, color)
         except:
             "{} aleady exist in the scene ".format(name)
+
         self.obj_collision_mngr.add_object(name, gtype, gparam, h_mat)
 
         self.init_objects[name] = deepcopy(self._scene.objs[name])

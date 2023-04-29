@@ -706,31 +706,33 @@ class PlaceAction(ActivityBase):
         obj_lower_pose[:3, :3] = obj_pose[:3, :3]
         obj_lower_pose[:3, 3] = obj_pose[:3, 3] + np.dot(box_bounds, obj_pose[:3, 2])
 
-    def compute_box_center_lower_point_from_box_pose(self, obj_pose=np.eye(4)):
+    def compute_box_center_lower_point_from_cur_pose(self, obj_pose=np.eye(4), bounds=0.05):
         """
         Function that calculates center_lower_point considering box rotation
 
-        box_bouds : half the length of a side of a square box
+        bouds : Distance from mesh center to bottom face
         """
-        box_bounds = 0.05
         obj_lower_pose = np.eye(4)
         obj_lower_pose[:3, :3] = obj_pose[:3, :3]
-        obj_lower_pose[:3, 3] = obj_pose[:3, 3] - np.dot(box_bounds, obj_pose[:3, 2])
+        obj_lower_pose[:3, 3] = obj_pose[:3, 3] - np.dot(bounds, obj_pose[:3, 2])
         return obj_lower_pose
 
     def get_current_surface_points_for_held_obj(self, obj_name):
 
         copied_mesh = deepcopy(self.scene_mngr.init_objects[obj_name].gparam)
         copied_mesh.apply_translation(-copied_mesh.center_mass)
+
+        bounds = -copied_mesh.bounds[0,2] + 0.0005
+        
         # Different from get_surface_points_for_held_obj
         copied_mesh.apply_transform(self.scene_mngr.scene.objs[obj_name].h_mat)
-
-        center_point = copied_mesh.center_mass
-        center_lower_point_old = center_point
+        # center_point = copied_mesh.center_mass
+        # center_lower_point_old = center_point
+        # center_lower_point_old[-1] = copied_mesh.bounds[0, 2]
 
         # Different from get_surface_points_for_held_obj
-        obj_center_lower_point = self.compute_box_center_lower_point_from_box_pose(
-            self.scene_mngr.scene.objs[obj_name].h_mat
+        obj_center_lower_point = self.compute_box_center_lower_point_from_cur_pose(
+            self.scene_mngr.scene.objs[obj_name].h_mat, bounds
         )
 
         points = np.array([obj_center_lower_point[:3, 3]])

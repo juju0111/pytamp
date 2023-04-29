@@ -97,6 +97,8 @@ class ActivityBase(metaclass=ABCMeta):
     def _collide(self, is_only_gripper: bool) -> bool:
         collide = False
         if is_only_gripper:
+            # collide = self.scene_mngr.collide_objs_and_gripper(True)
+            # print(collide)
             collide = self.scene_mngr.collide_objs_and_gripper()
         else:
             collide = self.scene_mngr.collide_objs_and_robot()
@@ -221,6 +223,9 @@ class ActivityBase(metaclass=ABCMeta):
                 for _, (task, joint_path) in enumerate(pnp_joint_path.items()):
                     for _, joint in enumerate(joint_path):
                         idx += 1
+
+                        if idx%100==0:
+                            print(f"make {idx}th pnp_joint_path!")
 
                         if task == self.move_data.MOVE_grasp:
                             grasp_task_idx = idx
