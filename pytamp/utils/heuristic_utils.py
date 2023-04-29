@@ -54,11 +54,15 @@ def get_heuristic_tcp_pose(
             )
             obj_pose = np.eye(4)
             obj_pose[:3, :3] = scene_mngr.scene.objs[object_name].h_mat[:3, :3]
-            obj_pose[:3, 3] = center_point + [0, 0, -0.005]
+            # obj_pose[:3, 3] = center_point + [0, 0, -0.005]
+            obj_pose[:3, 3] = object_mesh.center_mass + [0, 0, -0.005]
+            # obj_pose[:3, 3] = scene_mngr.scene.objs[object_name].h_mat[:3, 3] + [0, 0, -0.005]
+
 
             if "goal_bottle" not in object_name:
                 for theta in np.linspace(
-                    -np.pi + np.pi / 4, -np.pi + np.pi / 2, n_directions
+                    # -np.pi + np.pi / 4, -np.pi + np.pi / 2, n_directions
+                    -np.pi + np.pi / 12, -np.pi + np.pi / 2, n_directions
                 ):
                     r_mat_y = t_utils.get_matrix_from_rpy(rpy=[0, -theta, 0])
                     for theta2 in np.linspace(-np.pi / 8, np.pi / 8, 5):

@@ -97,8 +97,8 @@ class ActivityBase(metaclass=ABCMeta):
     def _collide(self, is_only_gripper: bool) -> bool:
         collide = False
         if is_only_gripper:
-            # collide = self.scene_mngr.collide_objs_and_gripper(True)
-            # print(collide)
+            # collide, _ = self.scene_mngr.collide_objs_and_gripper(True)
+            # print(collide, _)
             collide = self.scene_mngr.collide_objs_and_gripper()
         else:
             collide = self.scene_mngr.collide_objs_and_robot()
