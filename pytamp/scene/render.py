@@ -71,6 +71,10 @@ class RenderTriMesh(SceneRender):
         axis = trimesh.creation.axis(origin_size=0.01, transform=pose)
         self.trimesh_scene.add_geometry(axis)
 
+    def render_obj_axis(self, ax, pose, axis=[1, 1, 1], scale=0.15):
+        axis = trimesh.creation.axis(origin_size=0.01, transform=pose)
+        self.trimesh_scene.add_geometry(axis)
+
     def render_point(
         self, ax=None, point=np.zeros(3), radius=0.001, color=[1.0, 0.0, 0.0]
     ):
@@ -177,6 +181,10 @@ class RenderPyPlot(SceneRender):
 
     @staticmethod
     def render_axis(ax, pose, axis=[1, 1, 1], scale=0.05):
+        p_utils.render_axis(ax, pose, axis, scale)
+
+    @staticmethod
+    def render_obj_axis(ax, pose, axis=[1, 1, 1], scale=0.15):
         p_utils.render_axis(ax, pose, axis, scale)
 
     @staticmethod

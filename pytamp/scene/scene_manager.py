@@ -580,6 +580,7 @@ class SceneManager:
         is_save=False,
         video_name="test",
         fps=30,
+        gif=False,
     ):
         self.is_pyplot = True
 
@@ -595,13 +596,27 @@ class SceneManager:
             ax.clear()
             ax._axis3don = False
 
-            if self._scene.objs:
-                self.render.render_objects(ax, self._scene.objs, alpha)
-
             if eef_poses is not None:
                 self.render.render_trajectory(ax, eef_poses, size=0.1)
 
             self.set_robot_eef_pose(joint_path[i])
+
+            if self.attached_obj_name:
+                self.render.render_objects(ax, self._scene.objs, alpha)
+                try:
+                    self.render.render_obj_axis(
+                        ax,
+                        self.obj_collision_mngr.get_collision_info()[
+                            self.attached_obj_name
+                        ],
+                    )
+                except:
+                    self.render.render_obj_axis(
+                        ax,
+                        self.robot_collision_mngr.get_collision_info()[
+                            self.attached_obj_name
+                        ],
+                    )
 
             if attach_idx is not None:
                 if i in attach_idx:
@@ -648,12 +663,21 @@ class SceneManager:
             if i == len(joint_path) - 1:
                 print("Animation Finished..")
 
-        ani = animation.FuncAnimation(
+        anim = animation.FuncAnimation(
             fig, update, np.arange(len(joint_path)), interval=interval, repeat=repeat
         )
         if is_save:
-            video_name = video_name + ".mp4"
-            ani.save(video_name, writer="ffmpeg", fps=fps)
+            import os
+
+            print("PWD : ", os.getcwd())
+            writergif = animation.PillowWriter(fps=30)
+            writervideo = animation.FFMpegWriter(fps=30)
+            if gif:
+                video_name = video_name + ".gif"
+                anim.save(video_name, writergif)
+            else:
+                video_name = video_name + ".mp4"
+                anim.save(video_name, writervideo)
             print("Save finished..")
         else:
             self.show()
