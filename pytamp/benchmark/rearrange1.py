@@ -90,10 +90,10 @@ class Rearrange1(Benchmark):
             to fit the pytamp scene with the robot on it
         """
 
-        self.table_mesh = self.init_scene._support_objects[0]
+        self.table_mesh = self.init_scene._support_objects["table"]
 
         # Set table_pose according to robot height
-        self.table_pose = self.table_pose = Transform(pos=np.array([1.0, -0.6, 0.043]))
+        self.table_pose = self.table_pose = Transform(pos=np.array([0.9, -0.6, 0.043]))
         self.scene_mngr.table_pose = self.table_pose
 
         # object_pose transformation according to Table Pose
@@ -115,8 +115,8 @@ class Rearrange1(Benchmark):
         scene_mngr.add_object(
             name="table",
             gtype="mesh",
-            gparam=scene._objects["support_object"],
-            h_mat=scene._poses["support_object"],
+            gparam=self.table_mesh,
+            h_mat=scene._poses["table"],
             color=[0.823, 0.71, 0.55],
         )
 
@@ -148,7 +148,7 @@ class Rearrange1(Benchmark):
         scene_mngr.set_logical_state(
             scene_mngr.gripper_name, (scene_mngr.scene.logical_state.holding, None)
         )
-        scene_mngr.update_logical_states(is_init=False)
+        scene_mngr.update_logical_states(is_init=True)
         scene_mngr.show_logical_states()
 
     def render_axis(self, scene_mngr: SceneManager):
@@ -181,7 +181,8 @@ def make_scene():
     args = custom_parser()
 
     args.objects.append("ben_cube.stl")
-    args.objects.append("bottle.stl")
+    # args.objects.append("bottle.stl")
+    args.objects.append("can.stl")
     args.objects.append("can.stl")
     args.objects.append("milk.stl")
     args.objects.append("cereal.stl")
@@ -206,10 +207,10 @@ def make_scene():
     support_mesh = get_object_mesh("ben_table.stl", scale=[1.0, 1.5, 1.0])
     # support_mesh = get_object_mesh("ben_table.stl", scale=[0.8, 1.0, 1.0])
     init_scene = Make_Scene.random_arrangement(
-        object_names, object_meshes, support_mesh
+        object_names, object_meshes, "table", support_mesh
     )
     goal_scene = Make_Scene.random_arrangement(
-        object_names, object_meshes, support_mesh, for_goal_scene=True
+        object_names, object_meshes, "table", support_mesh, for_goal_scene=True
     )
 
     return object_names, init_scene, goal_scene

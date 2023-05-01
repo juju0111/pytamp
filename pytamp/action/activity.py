@@ -52,6 +52,7 @@ class ActivityBase(metaclass=ABCMeta):
         self.scene_mngr = scene_mngr.deepcopy_scene(scene_mngr)
         self.info = ActionInfo
         self.move_data = MoveData
+        self.scene_mngr.update_logical_states(True)
 
         if self.scene_mngr.scene.robot is not None:
             self.cartesian_planner = CartesianPlanner(
@@ -144,7 +145,7 @@ class ActivityBase(metaclass=ABCMeta):
     ):
         # assert pnp_all_joint_path[0].any(), f"Cannot simulate joint path"
 
-        self.scene_mngr.is_pyplot = True
+        # self.scene_mngr.is_pyplot = True
         eef_poses = None
         for pnp_joint_all_path, pick_all_object, place_all_object_pose in zip(
             pnp_all_joint_path, pick_all_objects, place_all_object_poses

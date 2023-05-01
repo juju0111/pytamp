@@ -14,6 +14,8 @@ from pytamp.scene.scene import Scene
 from pytamp.scene.object import Object
 from pytamp.scene.render import RenderPyPlot, RenderTriMesh
 
+import matplotlib.pyplot as plt
+
 
 class SceneManager:
     def __init__(
@@ -125,13 +127,13 @@ class SceneManager:
         self._scene.robot.info["collision"][name] = [
             self._scene.objs[name].name,
             self._scene.objs[name].gtype,
-            self._scene.objs[name].gparam,
+            [self._scene.objs[name].gparam],
             self._scene.objs[name].h_mat,
         ]
         self._scene.robot.info["visual"][name] = [
             self._scene.objs[name].name,
             self._scene.objs[name].gtype,
-            self._scene.objs[name].gparam,
+            [self._scene.objs[name].gparam],
             self._scene.objs[name].h_mat,
         ]
 
@@ -582,7 +584,8 @@ class SceneManager:
         fps=30,
         gif=False,
     ):
-        self.is_pyplot = True
+        # self.is_pyplot = True
+        images = []
 
         if init_scene is not None:
             self._scene = deepcopy(init_scene)
@@ -596,13 +599,20 @@ class SceneManager:
             ax.clear()
             ax._axis3don = False
 
+            if i % 100 == 0:
+                print(f"{i} scene")
             if eef_poses is not None:
-                self.render.render_trajectory(ax, eef_poses, size=0.1)
+                if self.is_pyplot:
+                    self.render.render_trajectory(ax, eef_poses, size=0.1)
 
             self.set_robot_eef_pose(joint_path[i])
 
             if self.attached_obj_name:
-                self.render.render_objects(ax, self._scene.objs, alpha)
+                if self.is_pyplot:
+                    self.render.render_objects(ax, self._scene.objs, alpha)
+                else:
+                    self.render.render_objects(self._scene.objs)
+
                 try:
                     self.render.render_obj_axis(
                         ax,
@@ -649,33 +659,69 @@ class SceneManager:
             if visible_gripper:
                 visible_geom = False
 
-            self.render.render_robot(
-                ax=ax,
-                robot=self._scene.robot,
-                alpha=alpha,
-                robot_color=robot_color,
-                geom=self.geom,
-                only_visible_geom=visible_geom,
-                visible_text=visible_text,
-                visible_gripper=visible_gripper,
-            )
-
             if i == len(joint_path) - 1:
                 print("Animation Finished..")
 
-        anim = animation.FuncAnimation(
-            fig, update, np.arange(len(joint_path)), interval=interval, repeat=repeat
-        )
+            if self.is_pyplot:
+                self.render.render_robot(
+                    ax=ax,
+                    robot=self._scene.robot,
+                    alpha=alpha,
+                    robot_color=robot_color,
+                    geom=self.geom,
+                    only_visible_geom=visible_geom,
+                    visible_text=visible_text,
+                    visible_gripper=visible_gripper,
+                )
+            else:
+                self.render.render_robot(robot=self._scene.robot, geom=self.geom)
+                self.render.trimesh_scene.set_camera(
+                    angles=(1.2, 0, 0.6), distance=2, center=(0.5, 0, 1)
+                )
+                img = self.render.get_scene_img()
+                # print(i ,"render")
+                self.render.trimesh_scene = None
+                return img
+
+        # 각 프레임 업데이트 함수
+        def update_frame(frame):
+            im.set_array(images[frame])
+            return (im,)
+
+        # 동영상 만들기
+        fig_trimesh = plt.figure()
+        ax_trimesh = plt.gca()
+        im = ax_trimesh.imshow(self.render.get_scene_img(), cmap="gray")
+        plt.axis("off")
+
+        # return images, im
+        if self.is_pyplot:
+            anim = animation.FuncAnimation(
+                fig,
+                update,
+                np.arange(len(joint_path)),
+                interval=interval,
+                repeat=repeat,
+                blit=True,
+            )
+        else:
+            for i in range(len(joint_path)):
+                images.append(update(i))
+
+            anim = animation.FuncAnimation(
+                fig_trimesh, update_frame, len(images), interval=interval, blit=True
+            )
+
         if is_save:
             import os
 
             print("PWD : ", os.getcwd())
-            writergif = animation.PillowWriter(fps=30)
-            writervideo = animation.FFMpegWriter(fps=30)
             if gif:
+                writergif = animation.PillowWriter(fps=30)
                 video_name = video_name + ".gif"
                 anim.save(video_name, writergif)
             else:
+                writervideo = animation.FFMpegWriter(fps=30)
                 video_name = video_name + ".mp4"
                 anim.save(video_name, writervideo)
             print("Save finished..")

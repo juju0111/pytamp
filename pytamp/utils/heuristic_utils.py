@@ -28,7 +28,7 @@ def get_heuristic_tcp_pose(
 ):
     bench_num = scene_mngr.scene.bench_num
     assert (
-        1 <= bench_num <= 4
+        0 <= bench_num <= 4
     ), f"Check again benchmark number.. the current number is {bench_num}. "
 
     if bench_num == 1:

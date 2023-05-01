@@ -10,6 +10,11 @@ from pytamp.utils import heuristic_utils as h_utils
 
 
 class PickAction(ActivityBase):
+    """
+    n_contacts : The number of samples to grasp the object
+    n_directions : The number of heuristically acquiring grasp_direction from the acquired grasp_pose
+    """
+
     def __init__(
         self,
         scene_mngr,
@@ -83,11 +88,61 @@ class PickAction(ActivityBase):
                     continue
                 yield action_level_1
 
+        # Expand action to tree
+
+    def get_possible_actions_level_1_even_support(self, scene: Scene = None) -> dict:
+        self.deepcopy_scene(scene)
+
+        for obj_name in self.scene_mngr.scene.objs:
+            # if self.scene_mngr.scene.bench_num != 4:
+            if obj_name == self.scene_mngr.scene.pick_obj_name:
+                continue
+
+            if self.scene_mngr.scene.logical_states[obj_name].get(
+                self.scene_mngr.scene.logical_state.on
+            ):
+                if isinstance(
+                    self.scene_mngr.scene.logical_states[obj_name].get(
+                        self.scene_mngr.scene.logical_state.on
+                    ),
+                    list,
+                ):
+                    for placed_obj in self.scene_mngr.scene.logical_states[
+                        obj_name
+                    ].get(self.scene_mngr.scene.logical_state.on):
+                        placed_obj_name = placed_obj.name
+                        if self.scene_mngr.scene.bench_num == 2:
+                            if placed_obj_name in ["shelf_8", "shelf_15"]:
+                                continue
+                        if self.scene_mngr.scene.bench_num == 3:
+                            if placed_obj_name in ["table"]:
+                                continue
+                else:
+                    placed_obj_name = (
+                        self.scene_mngr.scene.logical_states[obj_name]
+                        .get(self.scene_mngr.scene.logical_state.on)
+                        .name
+                    )
+                    if self.scene_mngr.scene.bench_num == 2:
+                        if placed_obj_name in ["shelf_8", "shelf_15"]:
+                            continue
+                    if self.scene_mngr.scene.bench_num == 3:
+                        if placed_obj_name in ["table"]:
+                            continue
+            if self.check_obj_support_static(obj_name):
+                action_level_1 = self.get_action_level_1_for_single_object(
+                    obj_name=obj_name
+                )
+                if not action_level_1[self.info.GRASP_POSES]:
+                    continue
+                yield action_level_1
+
     def get_action_level_1_for_single_object(
         self, scene=None, obj_name: str = None
     ) -> dict:
         if scene is not None:
             self.deepcopy_scene(scene)
+
         grasp_poses = list(self.get_all_grasp_poses(obj_name=obj_name))
         if self.scene_mngr.heuristic:
             grasp_poses.extend(list(self.get_grasp_pose_from_heuristic(obj_name)))
@@ -96,6 +151,31 @@ class PickAction(ActivityBase):
         )
         action_level_1 = self.get_action(obj_name, grasp_poses_not_collision)
         return action_level_1
+
+    def get_possible_action_level1_for_single_object_even_support(
+        self, scene=None, obj_name: str = None
+    ) -> dict:
+        # In get_possible_action_level_1, filtering is performed if the object to be picked supports another object..!
+        # In this function, we can get possible action even support 1 object! but 2 object is not
+        self.deepcopy_scene(scene)
+        self.check_obj_in_scene(obj_name)
+
+        if self.scene_mngr.scene.pick_obj_name:
+            print(
+                "picked obj is {}, so you can't pick {}".format(
+                    self.scene_mngr.scene.pick_obj_name, obj_name
+                )
+            )
+            return
+
+        # if not any(logical_state in self.scene_mngr.scene.logical_states[obj_name] for logical_state in self.filter_logical_states):
+        if self.check_obj_support_static(obj_name):
+            action_level_1 = self.get_action_level_1_for_single_object(
+                obj_name=obj_name
+            )
+            if not action_level_1[self.info.GRASP_POSES]:
+                return
+            return action_level_1
 
     def get_grasp_pose_from_heuristic(self, obj_name):
         copied_mesh = deepcopy(self.scene_mngr.scene.objs[obj_name].gparam)
@@ -138,6 +218,7 @@ class PickAction(ActivityBase):
     ):
         self.deepcopy_scene(scene)
 
+        # planning 시작에 앞서 collision manager의 scene을 scene을 transition 이전의 상태로 돌리고 planning 한다.
         pick_obj = self.scene_mngr.scene.robot.gripper.attached_obj_name
         self.scene_mngr.scene.objs[
             pick_obj
@@ -163,9 +244,13 @@ class PickAction(ActivityBase):
 
         # default pose -> pre_grasp_pose (rrt)
         pre_grasp_joint_path = self.get_rrt_star_path(default_thetas, pre_grasp_pose)
+        # pre_grasp_joint_path = self.get_prm_star_path(default_thetas, pre_grasp_pose)
+
         self.cost = 0
         if pre_grasp_joint_path:
             self.cost += self.rrt_planner.goal_node_cost
+            # self.cost += self.prm_planner.goal_node_cost
+
             # pre_grasp_pose -> grasp_pose (cartesian)
             grasp_joint_path = self.get_cartesian_path(
                 pre_grasp_joint_path[-1], grasp_pose
@@ -176,6 +261,7 @@ class PickAction(ActivityBase):
                 self.scene_mngr.attach_object_on_gripper(
                     self.scene_mngr.scene.robot.gripper.attached_obj_name
                 )
+
                 post_grasp_joint_path = self.get_cartesian_path(
                     grasp_joint_path[-1], post_grasp_pose
                 )
@@ -186,6 +272,9 @@ class PickAction(ActivityBase):
                     )
                 else:
                     success_joint_path = False
+                    self.scene_mngr.scene[
+                        pick_obj
+                    ].h_mat = self.scene_mngr.scene.robot.gripper.pick_obj_pose
                 self.scene_mngr.detach_object_from_gripper()
                 self.scene_mngr.add_object(
                     self.scene_mngr.scene.robot.gripper.attached_obj_name,
@@ -231,19 +320,31 @@ class PickAction(ActivityBase):
         return action
 
     def get_possible_transitions(self, scene: Scene = None, action: dict = {}):
+        """
+        args    :
+            scene   : 변경 전 current scene
+            action  : scene을 바꿀 action
+
+        return  :
+            next_scene
+        """
         if not action:
             ValueError("Not found any action!!")
 
         pick_obj = action[self.info.PICK_OBJ_NAME]
 
         for grasp_poses in action[self.info.GRASP_POSES]:
+            # 변경 전의 scene
             next_scene = deepcopy(scene)
 
             ## Change transition
+            # scene의 grasp pose(dict)를 대입
             next_scene.grasp_poses = grasp_poses
+            # 로봇이 잡아야할 gripper pose를 설정
             next_scene.robot.gripper.grasp_pose = grasp_poses[self.move_data.MOVE_grasp]
 
             # Gripper Move to grasp pose
+            # scene의 gripper_pose를 setting..
             next_scene.robot.gripper.set_gripper_pose(
                 grasp_poses[self.move_data.MOVE_grasp]
             )
@@ -265,13 +366,14 @@ class PickAction(ActivityBase):
             )
 
             # Move a gripper to default pose
+            # heuristic setting..!!
             default_thetas = self.scene_mngr.scene.robot.init_qpos
             default_pose = self.scene_mngr.scene.robot.forward_kin(default_thetas)[
                 self.scene_mngr.scene.robot.eef_name
             ].h_mat
             next_scene.robot.gripper.set_gripper_pose(default_pose)
 
-            # Move pick object to default pose
+            # change pick_obj's h_mat & Move pick object to default pose
             next_scene.objs[pick_obj].h_mat = np.dot(
                 next_scene.robot.gripper.get_gripper_pose(), transform_bet_gripper_n_obj
             )
@@ -366,11 +468,7 @@ class PickAction(ActivityBase):
                         self.scene_mngr.obj_collision_mngr.set_transform(
                             name, self.scene_mngr.scene.objs[name].h_mat
                         )
-                    # fig, ax = p_utils.init_3d_figure("test")
-                    # self.scene_mngr.render_gripper(ax)
-                    # self.scene_mngr.render_objects(ax)
-                    # self.scene_mngr.show()
-                    # print("test")
+
                     if self._collide(is_only_gripper=True):
                         is_collision = True
                         break
@@ -426,6 +524,10 @@ class PickAction(ActivityBase):
         return None, None
 
     def get_contact_points(self, obj_name):
+        """
+        args :
+            obj_name : obj_name
+        """
         copied_mesh = deepcopy(self.scene_mngr.scene.objs[obj_name].gparam)
         copied_mesh.apply_transform(self.scene_mngr.scene.objs[obj_name].h_mat)
 
@@ -441,9 +543,12 @@ class PickAction(ActivityBase):
         margin = 1
         surface_point_list = []
         while cnt < self.n_contacts:
+            # obj mesh에서 obj_mesh_face에서 weight를 주지 않았으므로 point를 random sample함.
             surface_points, normals = self.get_surface_points_from_mesh(copied_mesh, 2)
             is_success = False
+
             if self._is_force_closure(surface_points, normals, self.limit_angle):
+
                 if (
                     center_point[0] - len_x * margin
                     <= surface_points[0][0]
@@ -497,6 +602,7 @@ class PickAction(ActivityBase):
         return weights
 
     def _is_force_closure(self, points, normals, limit_angle):
+        # sample된 point가 gripper의 width보다 작고, point가 서로 마주보고있는지!!
         vectorA = points[0]
         vectorB = points[1]
 
@@ -538,6 +644,6 @@ class PickAction(ActivityBase):
                 tcp_pose[:3, 0] = x
                 tcp_pose[:3, 1] = y
                 tcp_pose[:3, 2] = z
-                tcp_pose[:3, 3] = center_point + [0, 0, 0.05]
+                tcp_pose[:3, 3] = center_point - [0, 0, 0.005]
 
                 yield tcp_pose

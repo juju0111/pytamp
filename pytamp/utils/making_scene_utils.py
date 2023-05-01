@@ -36,6 +36,7 @@ class Make_Scene(Scene_ACRONYM):
         cls,
         object_names,
         object_meshes,
+        support_names,
         support_mesh,
         distance_above_support=0.002,
         gaussian=None,
@@ -54,7 +55,7 @@ class Make_Scene(Scene_ACRONYM):
             Scene: Scene representation.
         """
         s = cls()
-        s.add_object("support_object", support_mesh, pose=np.eye(4), support=True)
+        s.add_object(support_names, support_mesh, pose=np.eye(4), support=True)
 
         for i, obj_mesh in enumerate(object_meshes):
             s.place_object(
@@ -123,7 +124,7 @@ class Make_Scene(Scene_ACRONYM):
             bool: Whether a placement pose was found.
             np.ndarray: Homogenous 4x4 matrix describing the object placement pose. Or None if none was found.
         """
-        support_polys, support_T = self._get_support_polygons()
+        support_polys, support_T, sup_obj_name = self._get_support_polygons()
         if len(support_polys) == 0:
             raise RuntimeError("No support polygons found!")
 
@@ -187,7 +188,7 @@ class Make_Scene(Scene_ACRONYM):
 
             iter += 1
 
-        return not colliding, placement_T if not colliding else None
+        return not colliding, placement_T, sup_obj_name if not colliding else None
 
     def place_object(
         self,
@@ -210,7 +211,7 @@ class Make_Scene(Scene_ACRONYM):
         Returns:
             [type]: [description]
         """
-        success, placement_T = self.find_object_placement(
+        success, placement_T, sup_obj_name = self.find_object_placement(
             obj_mesh,
             max_iter,
             distance_above_support=distance_above_support,

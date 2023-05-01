@@ -1,6 +1,9 @@
 import numpy as np
 import trimesh
 from abc import abstractclassmethod, ABCMeta
+from PIL import Image
+import io
+
 
 from pykin.utils import plot_utils as p_utils
 from pykin.utils.kin_utils import (
@@ -35,6 +38,25 @@ class SceneRender(metaclass=ABCMeta):
 class RenderTriMesh(SceneRender):
     def __init__(self):
         self.trimesh_scene = trimesh.Scene()
+
+    def get_scene_img(self):
+        data = self.trimesh_scene.save_image(resolution=[800, 600], visible=False)
+        image = np.array(Image.open(io.BytesIO(data)))
+        return image
+
+    def set_camera_view(self):
+        eye = [2, 2, 2]  # 시점 위치
+        target = [0, 0, 0]  # 시점이 바라보는 지점
+        up = [0, 1, 0]  # 시점 방향의 상향 벡터
+        points = np.array([eye, target, up])
+        # 카메라 객체 생성 및 시점 설정
+        camera = trimesh.scene.Camera(resolution=[800, 600], focal=(0.5, 0.5))
+        camera.look_at(points)
+
+        # 시점 변환 적용
+        self.trimesh_scene.set_camera(
+            angles=(1.2, 0, 0.6), distance=2, center=(0.5, 0, 1)
+        )
 
     def render_scene(self, objs, robot, geom="collision"):
         self.render_objects(objs)

@@ -40,6 +40,15 @@ class MCTS_rearrangement:
             # robot action은 우선 패스하고 object transition만 고려해서 Goal Scene을 만족하는
             # state가 나올 때 까지 search!!
             self.rearr_action = RearrangementAction(scene_mngr)
+            self.pick_action = PickAction(scene_mngr, n_contacts=20, n_directions=1)
+            self.place_action = PlaceAction(
+                scene_mngr,
+                n_samples_held_obj=0,
+                n_samples_support_obj=0,
+                n_directions=1,
+                release_distance=0.02,
+                retreat_distance=0.15,
+            )
             self.init_scene = init_scene
         if bench_num == 1:
             self.pick_action = PickAction(scene_mngr, n_contacts=0, n_directions=1)
