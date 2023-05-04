@@ -207,7 +207,8 @@ def make_scene():
     support_mesh = get_object_mesh("ben_table.stl", scale=[1.0, 1.5, 1.0])
     # support_mesh = get_object_mesh("ben_table.stl", scale=[0.8, 1.0, 1.0])
     init_scene = Make_Scene.random_arrangement(
-        object_names, object_meshes, "table", support_mesh
+        # object_names, object_meshes, "table", support_mesh
+        object_names, object_meshes, "table", support_mesh, for_goal_scene=True
     )
     goal_scene = Make_Scene.random_arrangement(
         object_names, object_meshes, "table", support_mesh, for_goal_scene=True

@@ -436,7 +436,7 @@ class PickAction(ActivityBase):
             yield grasp_pose
 
     def get_pre_grasp_pose(self, grasp_pose):
-        pre_grasp_pose = np.eye(4)
+        pre_grasp_pose = np.eye(4,dtype=np.float32)
         pre_grasp_pose[:3, :3] = grasp_pose[:3, :3]
         pre_grasp_pose[:3, 3] = (
             grasp_pose[:3, 3] - self.retreat_distance * grasp_pose[:3, 2]
@@ -444,7 +444,7 @@ class PickAction(ActivityBase):
         return pre_grasp_pose
 
     def get_post_grasp_pose(self, grasp_pose):
-        post_grasp_pose = np.eye(4)
+        post_grasp_pose = np.eye(4,dtype=np.float32)
         post_grasp_pose[:3, :3] = grasp_pose[:3, :3]
         post_grasp_pose[:3, 3] = grasp_pose[:3, 3] + np.array(
             [0, 0, self.retreat_distance]

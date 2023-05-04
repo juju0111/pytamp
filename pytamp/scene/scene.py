@@ -70,7 +70,7 @@ class Scene:
                 ][i]
         self.goal_object_num = len(obj_names)
         self.rearranged_object = []
-        self.pre_defined_min_distance = 1e-3
+        self.pre_defined_min_distance = 1e-4
 
     def _init_bench_1(self):
         if self.benchmark_config[self.bench_num].get("goal_object"):

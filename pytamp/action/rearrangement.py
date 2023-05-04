@@ -75,6 +75,7 @@ class RearrangementAction(ActivityBase):
                 )
                 if not action_level_1:
                     continue
+            
                 yield action_level_1
 
     def get_action_level_1_for_single_object(
@@ -109,11 +110,11 @@ class RearrangementAction(ActivityBase):
             )
             action = self.get_action(obj_name, release_poses_not_collision)
         else:
-
             obj_poses_not_collision = list(
                 self.get_goal_location_not_collision(obj_name, location)
             )
-            action = self.get_action(obj_name, obj_poses_not_collision)
+            action = self.get_action_only_rearr(obj_name, obj_poses_not_collision)
+        
         return action
 
     def get_goal_location(self, obj_name: str) -> dict:
@@ -289,12 +290,13 @@ class RearrangementAction(ActivityBase):
         held_obj_name = action[self.info.REARR_OBJ_NAME]
         place_obj_name = action[self.info.PLACE_OBJ_NAME]
 
-        for rearr_pose, obj_pose_transformed in action[self.info.REARR_POSES]:
-            next_scene = deepcopy(scene)
+        # print(action)
 
-            next_scene.rearr_poses = rearr_pose
+        if self.use_pick_action:
+            for rearr_pose, obj_pose_transformed in action[self.info.REARR_POSES]:
+                next_scene = deepcopy(scene)
+                next_scene.rearr_poses = rearr_pose
 
-            if self.use_pick_action:
                 next_scene.robot.gripper.release_pose = rearr_pose[
                     self.move_data.MOVE_release
                 ]
@@ -327,17 +329,22 @@ class RearrangementAction(ActivityBase):
                 next_scene.logical_states[held_obj_name][
                     next_scene.logical_state.on
                 ] = next_scene.objs[place_obj_name]
+    
+                yield next_scene
 
-            else:
+        else:
+            for rearr_pose in action[self.info.REARR_POSES]:
+                next_scene = deepcopy(scene)
+                next_scene.rearr_poses = rearr_pose
                 next_scene.rearr_obj_name = name
-                pose = rearr_pose[name]
+                pose = rearr_pose[place_obj_name]
 
                 next_scene.transform_from_cur_to_goal = c_T_w.dot(pose)
 
                 # Move object to goal location
                 next_scene.objs[name].h_mat = deepcopy(pose)
 
-            yield next_scene
+                yield next_scene
 
     def get_release_poses_not_collision(self, obj_name: str, location: list):
         """
@@ -434,10 +441,6 @@ class RearrangementAction(ActivityBase):
                 is_collision = False
 
                 current_location = self.scene_mngr.scene.objs[obj_name].h_mat
-
-                target_obj_and_current_location = {}
-                target_obj_and_current_location[sup_obj_name] = goal_pose
-
                 self.scene_mngr.set_object_pose(obj_name, goal_pose)
                 result, _ = self.scene_mngr.obj_collision_mngr.in_collision_internal(
                     return_names=True
@@ -446,12 +449,13 @@ class RearrangementAction(ActivityBase):
 
                 if result:
                     is_collision = True
-                    i[obj_name] = None
+                    # i[obj_name] = None
                 if not is_collision:
-                    yield i, target_obj_and_current_location
+                    yield i
 
     def get_all_release_poses(self, eef_pose):
         release_pose = {}
+        eef_pose = eef_pose.astype(np.float32)
         release_pose[self.move_data.MOVE_release] = eef_pose
         release_pose[self.move_data.MOVE_pre_release] = self.get_pre_release_pose(
             eef_pose
@@ -462,7 +466,7 @@ class RearrangementAction(ActivityBase):
         return release_pose
 
     def get_pre_release_pose(self, release_pose):
-        pre_release_pose = np.eye(4)
+        pre_release_pose = np.eye(4,dtype=np.float32)
         pre_release_pose[:3, :3] = release_pose[:3, :3]
         pre_release_pose[:3, 3] = release_pose[:3, 3] + np.array(
             [0, 0, self.retreat_distance]
@@ -470,7 +474,7 @@ class RearrangementAction(ActivityBase):
         return pre_release_pose
 
     def get_post_release_pose(self, release_pose):
-        post_release_pose = np.eye(4)
+        post_release_pose = np.eye(4,dtype=np.float32)
         post_release_pose[:3, :3] = release_pose[:3, :3]
         if self.scene_mngr.scene.bench_num != 3:
             post_release_pose[:3, 3] = (
@@ -489,6 +493,18 @@ class RearrangementAction(ActivityBase):
 
         if possible_action:
             action[self.info.PLACE_OBJ_NAME] = list(possible_action[0][-1].keys())[0]
+        else:
+            action[self.info.PLACE_OBJ_NAME] = list()
+
+        action[self.info.REARR_POSES] = possible_action
+        return action
+    
+    def get_action_only_rearr(self, obj_name: str, possible_action):
+        action = {}
+        action[self.info.TYPE] = "rearr"
+        action[self.info.REARR_OBJ_NAME] = obj_name
+        if possible_action: 
+            action[self.info.PLACE_OBJ_NAME] = list(possible_action[-1].keys())[0]
         else:
             action[self.info.PLACE_OBJ_NAME] = list()
 

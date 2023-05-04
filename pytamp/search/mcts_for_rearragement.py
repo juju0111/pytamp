@@ -29,18 +29,22 @@ class MCTS_rearrangement:
         max_depth: int = 16,
         gamma: float = 1,
         debug_mode=False,
+        use_pick_action=False,
     ):
         self.node_data = NodeData
         self.scene_mngr = scene_mngr
         self.scene_mngr.is_debug_mode = False
         self.state = scene_mngr.scene
+        self.use_pick_action = use_pick_action
+        self.prev_rearr_obj_num = 0
+        self.next_rearr_obj_num = 0
         bench_num = self.scene_mngr.scene.bench_num
 
         if bench_num == 0:
             # robot action은 우선 패스하고 object transition만 고려해서 Goal Scene을 만족하는
             # state가 나올 때 까지 search!!
             self.rearr_action = RearrangementAction(scene_mngr)
-            self.pick_action = PickAction(scene_mngr, n_contacts=20, n_directions=1)
+            self.pick_action = PickAction(scene_mngr, n_contacts=10, n_directions=5)
             self.place_action = PlaceAction(
                 scene_mngr,
                 n_samples_held_obj=0,
@@ -174,6 +178,7 @@ class MCTS_rearrangement:
         MCTS level 1 planning for rearrangement
 
         """
+        self.prev_rearr_obj_num = 0
         self.pick_obj_set = set()
         self.pick_obj_list = []
         print(
@@ -323,6 +328,7 @@ class MCTS_rearrangement:
         # ? Get reward
         # *======================================================================================================================== #
         reward = self._get_reward(cur_state, cur_logical_action, next_state, depth)
+        self.prev_rearr_obj_num = self.next_rearr_obj_num 
         print(
             f"{sc.MAGENTA}[Reward]{sc.ENDC} S({cur_state_node}) -> A({cur_logical_action_node}) -> S'({next_state_node}) Reward : {sc.UNDERLINE}{np.round(reward,3)}{sc.ENDC}"
         )
@@ -416,7 +422,7 @@ class MCTS_rearrangement:
                     self.rearr_action.get_possible_actions_level_1(
                         scene=cur_state, 
                         scene_for_sample=self.init_scene,
-                        use_pick_action=True,
+                        use_pick_action=self.use_pick_action,
                     )
                 )
                 # possible_actions = list(self.place_action.get_possible_actions_level_1(cur_state))
@@ -427,16 +433,14 @@ class MCTS_rearrangement:
                 self.rearr_action.get_possible_actions_level_1(
                     scene=cur_state, 
                     scene_for_sample=self.init_scene,
+                    use_pick_action=self.use_pick_action,
                 )
             )
 
         for possible_action in possible_actions:
             # print("possible actions :" ,possible_action)
-            for action in possible_action[self.rearr_action.info.REARR_POSES]:
-                action_ = deepcopy(possible_action)
-                action_[self.rearr_action.info.REARR_POSES] = list()
-                action_[self.rearr_action.info.REARR_POSES].append(action)
-
+            if possible_action[self.rearr_action.info.TYPE] == "pick":
+                
                 action_node = self.tree.number_of_nodes()
                 self.tree.add_node(action_node)
                 self.tree.update(
@@ -446,7 +450,7 @@ class MCTS_rearrangement:
                             {
                                 NodeData.DEPTH: depth + 1,
                                 NodeData.STATE: cur_state,
-                                NodeData.ACTION: action_,
+                                NodeData.ACTION: possible_action,
                                 NodeData.VALUE: -np.inf,
                                 NodeData.VALUE_HISTORY: [],
                                 NodeData.VISIT: 0,
@@ -463,6 +467,39 @@ class MCTS_rearrangement:
                     ]
                 )
                 self.tree.add_edge(cur_state_node, action_node)
+            
+            if possible_action[self.rearr_action.info.TYPE] == "rearr":
+                for action in possible_action[self.rearr_action.info.REARR_POSES]:
+                    action_ = deepcopy(possible_action)
+                    action_[self.rearr_action.info.REARR_POSES] = list()
+                    action_[self.rearr_action.info.REARR_POSES].append(action)
+
+                    action_node = self.tree.number_of_nodes()
+                    self.tree.add_node(action_node)
+                    self.tree.update(
+                        nodes=[
+                            (
+                                action_node,
+                                {
+                                    NodeData.DEPTH: depth + 1,
+                                    NodeData.STATE: cur_state,
+                                    NodeData.ACTION: action_,
+                                    NodeData.VALUE: -np.inf,
+                                    NodeData.VALUE_HISTORY: [],
+                                    NodeData.VISIT: 0,
+                                    NodeData.NUMBER: action_node,
+                                    NodeData.TYPE: "action",
+                                    NodeData.JOINTS: [],
+                                    NodeData.LEVEL1: False,
+                                    NodeData.LEVEL2: False,
+                                    NodeData.SUCCESS: False,
+                                    NodeData.COST: 0,
+                                    NodeData.TEST: (),
+                                },
+                            )
+                        ]
+                    )
+                    self.tree.add_edge(cur_state_node, action_node)
 
     def _select_next_state_node(
         self,
@@ -680,30 +717,31 @@ class MCTS_rearrangement:
 
         if self.scene_mngr.scene.bench_num == 0:
             # 현재 transition한 object를 받아와서 goal과 비교해야함.
-            prev_rearr_obj_num = len(cur_state.rearranged_object)
-            next_state_is_success = next_state.check_success_rearr_action(
-                cur_logical_action[self.rearr_action.info.REARR_OBJ_NAME]
-            )
-            next_rearr_obj_num = len(next_state.rearranged_object)
+            # self.prev_rearr_obj_num = len(cur_state.rearranged_object)
             if logical_action_type == "rearr":
+                next_state_is_success = next_state.check_success_rearr_action(
+                    cur_logical_action[self.rearr_action.info.REARR_OBJ_NAME]
+                )
+                self.next_rearr_obj_num = len(next_state.rearranged_object)
+
                 if next_state_is_success:
                     # When you place well on your goal
-                    if next_rearr_obj_num - prev_rearr_obj_num == 1:
+                    if self.next_rearr_obj_num - self.prev_rearr_obj_num == 1:
                         print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
                         return abs(reward) / ((depth + 2) / 2) * 5
                     # When you place object on the target again
-                    if next_rearr_obj_num - prev_rearr_obj_num == 0:
+                    if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                         print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
                         return reward
                 else:
                     # When an object in the goal is moved to another place
-                    if next_rearr_obj_num - prev_rearr_obj_num == -1:
+                    if self.next_rearr_obj_num - self.prev_rearr_obj_num == -1:
                         print(f"{sc.FAIL}Bad Action{sc.ENDC}")
                         return max(
                             reward * 1 / (depth + 1) * 20, self.infeasible_reward
                         )
                     # When an object that was not at the goal position is moved to another location
-                    if next_rearr_obj_num - prev_rearr_obj_num == 0:
+                    if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                         print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
                         return reward
 
