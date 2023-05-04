@@ -400,23 +400,35 @@ class MCTS_rearrangement:
             depth : current state node's depth 
 
         """
-        # is_holding = (
-        #     cur_state.logical_states[cur_state.robot.gripper.name][cur_state.logical_state.holding]
-        #     is not None
-        # )
-
-        # if not is_holding:
-        #     possible_actions = list(self.pick_action.get_possible_actions_level_1(cur_state))
-        #     # self.render_action("Pick Action", cur_state, possible_actions, is_holding)
-        # else:
-        #     possible_actions = list(self.place_action.get_possible_actions_level_1(cur_state))
-        #     # self.render_action("Place Action", cur_state, possible_actions, is_holding)
-
-        possible_actions = list(
-            self.rearr_action.get_possible_actions_level_1(
-                scene=cur_state, scene_for_sample=self.init_scene
+        if self.use_pick_action:
+            ## consider pick & rearr in level_1 
+            
+            is_holding = (
+                cur_state.logical_states[cur_state.robot.gripper.name][cur_state.logical_state.holding]
+                is not None
             )
-        )
+
+            if not is_holding:
+                possible_actions = list(self.pick_action.get_possible_actions_level_1(cur_state))
+                # self.render_action("Pick Action", cur_state, possible_actions, is_holding)
+            else:
+                possible_actions = list(
+                    self.rearr_action.get_possible_actions_level_1(
+                        scene=cur_state, 
+                        scene_for_sample=self.init_scene,
+                        use_pick_action=True,
+                    )
+                )
+                # possible_actions = list(self.place_action.get_possible_actions_level_1(cur_state))
+                # self.render_action("Place Action", cur_state, possible_actions, is_holding)
+        else:
+            ## consider only rearr in level_1 
+            possible_actions = list(
+                self.rearr_action.get_possible_actions_level_1(
+                    scene=cur_state, 
+                    scene_for_sample=self.init_scene,
+                )
+            )
 
         for possible_action in possible_actions:
             # print("possible actions :" ,possible_action)
