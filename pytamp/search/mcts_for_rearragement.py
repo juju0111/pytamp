@@ -179,6 +179,7 @@ class MCTS_rearrangement:
 
         """
         self.prev_rearr_obj_num = 0
+        self.next_rearr_obj_num = 0
         self.pick_obj_set = set()
         self.pick_obj_list = []
         print(
@@ -214,8 +215,13 @@ class MCTS_rearrangement:
                 ##############  check level 1 already found   ###############
 
                 if not self.has_aleardy_level_1_optimal_nodes:
-                    # self._level_wise_2_optimize(success_level_1_sub_nodes)
-                    # self._update_success_level_1_and_2(success_level_1_sub_nodes)
+                    if self.use_pick_action:
+                        self._level_wise_2_optimize(success_level_1_sub_nodes)
+                        self._update_success_level_1_and_2(success_level_1_sub_nodes)
+                        
+                        self.values_for_level_2.append(
+                        self.get_max_value_level_2(success_level_1_sub_nodes)
+                        )
 
                     self.history_level_1_optimal_nodes.append(success_level_1_sub_nodes)
                     self.history_level_1_values.append(
@@ -226,17 +232,12 @@ class MCTS_rearrangement:
                         value=self.tree.nodes[0][NodeData.VALUE_HISTORY][-1],
                     )
 
-                    # self.values_for_level_2.append(
-                    # self.get_max_value_level_2(success_level_1_sub_nodes)
-                    # )
                 else:
-                    pass
-                    # self.values_for_level_2.append(self.level2_max_value)
+                    self.values_for_level_2.append(self.level2_max_value)
 
                 self.level_wise_1_success = False
             else:
-                pass
-                # self.values_for_level_2.append(self.level2_max_value)
+                self.values_for_level_2.append(self.level2_max_value)
 
     def _level_wise_1_optimize_rearr(self, state_node: int, depth: int):
         """
@@ -723,7 +724,7 @@ class MCTS_rearrangement:
                     cur_logical_action[self.rearr_action.info.REARR_OBJ_NAME]
                 )
                 self.next_rearr_obj_num = len(next_state.rearranged_object)
-
+                print("# next_scene rearr_num : ", self.next_rearr_obj_num)
                 if next_state_is_success:
                     # When you place well on your goal
                     if self.next_rearr_obj_num - self.prev_rearr_obj_num == 1:
@@ -929,19 +930,19 @@ class MCTS_rearrangement:
                         f"{sc.COLOR_YELLOW}place {place_scene.pick_obj_name} on {place_scene.cur_place_obj_name}{sc.ENDC}"
                     )
 
-                    place_joint_path = self.place_action.get_possible_joint_path_level_2(
+                    place_joint_path = self.rearr_action.get_possible_joint_path_level_2(
                         scene=place_scene,
-                        release_poses=place_scene.release_poses,
+                        release_poses=place_scene.rearr_poses,
                         init_thetas=init_theta,
                     )
                     if place_joint_path:
                         success_place = True
                         init_theta = place_joint_path[-1][
-                            self.place_action.move_data.MOVE_default_release
+                            self.rearr_action.move_data.MOVE_default_release
                         ][-1]
 
                         current_cost = round(
-                            self.weird_division(1, self.place_action.cost) / 10, 6
+                            self.weird_division(1, self.rearr_action.cost) / 10, 6
                         )
                         if (
                             current_cost

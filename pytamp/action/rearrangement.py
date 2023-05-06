@@ -314,7 +314,7 @@ class RearrangementAction(ActivityBase):
                     held_obj_name, obj_pose_transformed[place_obj_name]
                 )
 
-                # next_scene.cur_place_obj_name = place_obj_name
+                next_scene.cur_place_obj_name = place_obj_name
 
                 ## Change Logical State
                 # Clear logical_state of held obj
