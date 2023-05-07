@@ -673,16 +673,16 @@ class MCTS_rearrangement:
         if self.scene_mngr.scene.bench_num == 0:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 2
 
-        if self.scene_mngr.scene.bench_num == 1:
+        elif self.scene_mngr.scene.bench_num == 1:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 10
 
-        if self.scene_mngr.scene.bench_num == 2:
+        elif self.scene_mngr.scene.bench_num == 2:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 2
 
-        if self.scene_mngr.scene.bench_num == 3:
+        elif self.scene_mngr.scene.bench_num == 3:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 2
 
-        if self.scene_mngr.scene.bench_num == 4:
+        elif self.scene_mngr.scene.bench_num == 4:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 2
 
         if cur_state is None:
@@ -708,7 +708,7 @@ class MCTS_rearrangement:
                     cur_logical_action[self.rearr_action.info.REARR_OBJ_NAME]
                 )
                 self.next_rearr_obj_num = len(next_state.rearranged_object)
-                print("# next_scene rearr_num : ", self.next_rearr_obj_num)
+                # print("# next_scene rearr_num : ", self.next_rearr_obj_num)
                 if next_state_is_success:
                     # When you place well on your goal
                     if self.next_rearr_obj_num - self.prev_rearr_obj_num == 1:
@@ -728,7 +728,7 @@ class MCTS_rearrangement:
                         print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
                         return reward
 
-        if self.scene_mngr.scene.bench_num == 1:
+        elif self.scene_mngr.scene.bench_num == 1:
             prev_stacked_box_num = cur_state.success_stacked_box_num
             next_state_is_success = next_state.check_success_stacked_bench_1()
             # Good action if placed well in alphabetical order
