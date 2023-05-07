@@ -28,7 +28,7 @@ class Rearrange1(Benchmark):
         Args :
             robot_name (str) : robot name to use
             object_names : object name list on the support object
-            init_scene (Scene for Acronym) 
+            init_scene (Scene for Acronym)
             goal_scene (Scene for Acronym)
         """
 
@@ -120,9 +120,7 @@ class Rearrange1(Benchmark):
             color=[0.823, 0.71, 0.55],
         )
 
-        logical_states = [
-            (f"{o_name}", ("on", "table")) for o_name in self.object_names
-        ]
+        logical_states = [(f"{o_name}", ("on", "table")) for o_name in self.object_names]
 
         if not self.obj_colors:
             self.obj_colors = [
@@ -142,9 +140,7 @@ class Rearrange1(Benchmark):
             scene_mngr.set_logical_state(logical_states[i][0], logical_states[i][1])
 
         scene_mngr.add_robot(self.robot, self.robot.init_qpos)
-        scene_mngr.set_logical_state(
-            "table", (scene_mngr.scene.logical_state.static, True)
-        )
+        scene_mngr.set_logical_state("table", (scene_mngr.scene.logical_state.static, True))
         scene_mngr.set_logical_state(
             scene_mngr.gripper_name, (scene_mngr.scene.logical_state.holding, None)
         )
@@ -208,10 +204,20 @@ def make_scene():
     # support_mesh = get_object_mesh("ben_table.stl", scale=[0.8, 1.0, 1.0])
     init_scene = Make_Scene.random_arrangement(
         # object_names, object_meshes, "table", support_mesh
-        object_names, object_meshes, "table", support_mesh, for_goal_scene=True
+        object_names,
+        object_meshes,
+        "table",
+        support_mesh,
+        for_goal_scene=True,
+        gaussian=[-0.1, 0, 0.15, 0.15],
     )
     goal_scene = Make_Scene.random_arrangement(
-        object_names, object_meshes, "table", support_mesh, for_goal_scene=True
+        object_names,
+        object_meshes,
+        "table",
+        support_mesh,
+        for_goal_scene=True,
+        gaussian=[-0.2, 0, 0.1, 0.15],
     )
 
     return object_names, init_scene, goal_scene

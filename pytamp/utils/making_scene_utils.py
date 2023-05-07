@@ -2,10 +2,12 @@ from pykin.utils.mesh_utils import get_object_mesh
 import h5py, json, os
 import trimesh
 import trimesh.transformations as tra
+from shapely.geometry import Point
 
 from acronym_tools import Scene as Scene_ACRONYM
 import numpy as np
 import pyrender
+
 
 class Make_Scene(Scene_ACRONYM):
     obj_dict = {}
@@ -148,7 +150,12 @@ class Make_Scene(Scene_ACRONYM):
                     p = Point(
                         np.random.normal(
                             loc=np.array(gaussian[:2])
-                            + support_polys[support_index].centroid,
+                            + np.array(
+                                [
+                                    support_polys[support_index].centroid.x,
+                                    support_polys[support_index].centroid.y,
+                                ]
+                            ),
                             scale=gaussian[2:],
                         )
                     )
@@ -156,9 +163,7 @@ class Make_Scene(Scene_ACRONYM):
                         pts = [p.x, p.y]
                         break
             else:
-                pts = trimesh.path.polygons.sample(
-                    support_polys[support_index], count=1
-                )
+                pts = trimesh.path.polygons.sample(support_polys[support_index], count=1)
 
             # To avoid collisions with the support surface
             pts3d = np.append(pts, distance_above_support)
@@ -170,9 +175,7 @@ class Make_Scene(Scene_ACRONYM):
             )
 
             if for_goal_scene:
-                pose = self._get_random_stable_pose_for_goal_scene(
-                    stable_poses, stable_poses_probs
-                )
+                pose = self._get_random_stable_pose_for_goal_scene(stable_poses, stable_poses_probs)
             else:
                 pose = self._get_random_stable_pose(stable_poses, stable_poses_probs)
 
@@ -265,9 +268,7 @@ class SceneRenderer:
         self._z_near = z_near
         self._scene = pyrender_scene
 
-        self._camera = pyrender.PerspectiveCamera(
-            yfov=fov, aspectRatio=aspect_ratio, znear=z_near
-        )
+        self._camera = pyrender.PerspectiveCamera(yfov=fov, aspectRatio=aspect_ratio, znear=z_near)
 
     def get_trimesh_camera(self):
         """Get a trimesh object representing the camera intrinsics.
@@ -353,9 +354,7 @@ class SceneRenderer:
             if node.name == target_id:
                 node.mesh.is_visible = True
                 _, object_depth = renderer.render(scene)
-                mask = np.logical_and(
-                    (np.abs(object_depth - depth) < 1e-6), np.abs(depth) > 0
-                )
+                mask = np.logical_and((np.abs(object_depth - depth) < 1e-6), np.abs(depth) > 0)
                 segmentation[mask] = 1
 
         for node in scene.mesh_nodes:
@@ -368,7 +367,7 @@ class SceneRenderer:
 
         return color, depth, pc, segmentation
 
-   
+
 def load_mesh(filename, mesh_root_dir, scale=None):
     """Load a mesh from a JSON or HDF5 file from the grasp dataset. The mesh will be scaled accordingly.
 
@@ -419,4 +418,3 @@ def get_obj_name(obj_dict, obj_fname):
         obj_dict[obj_name] += 1
         obj_name = obj_name + str(obj_dict[obj_name])
     return obj_name
-
