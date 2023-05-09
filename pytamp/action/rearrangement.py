@@ -329,7 +329,10 @@ class RearrangementAction(ActivityBase):
                 next_scene.logical_states[held_obj_name][
                     next_scene.logical_state.on
                 ] = next_scene.objs[place_obj_name]
-    
+
+                # Add gparam_center_mass for pointcloud sample 
+                # TODO
+                
                 yield next_scene
 
         else:
@@ -343,7 +346,8 @@ class RearrangementAction(ActivityBase):
 
                 # Move object to goal location
                 next_scene.objs[name].h_mat = deepcopy(pose)
-
+                # Add gparam_center_mass for pointcloud sample 
+                # TODO
                 yield next_scene
 
     def get_release_poses_not_collision(self, obj_name: str, location: list):

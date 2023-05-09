@@ -65,6 +65,10 @@ class SceneManager:
         if h_mat is None:
             h_mat = np.eye(4, dtype=np.float32)
 
+        # Change g_param for point cloud sample 
+        gparam.apply_translation(-gparam.center_mass)
+        gparam.apply_transform(h_mat)
+
         self._scene.objs[name] = Object(name, gtype, gparam, h_mat, color)
         self.obj_collision_mngr.add_object(name, gtype, gparam, h_mat)
 
