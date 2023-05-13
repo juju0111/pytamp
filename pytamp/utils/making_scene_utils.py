@@ -191,7 +191,7 @@ class Make_Scene(Scene_ACRONYM):
 
             iter += 1
 
-        return not colliding, placement_T, sup_obj_name if not colliding else None
+        return not colliding, placement_T, sup_obj_name[support_index] if not colliding else None
 
     def place_object(
         self,
@@ -241,6 +241,27 @@ class Make_Scene(Scene_ACRONYM):
             pyrender_scene.add(mesh, name=obj_id, pose=self._poses[obj_id])
         return pyrender_scene
 
+
+    def get_support_obj_point_cloud(self):
+        # consider table top point cloud..! 
+        # In the case of drawers and bookshelves, it is a little lacking to consider
+        support_polys, support_T , sup_obj_name = self._get_support_polygons()
+
+        support_index = max(enumerate(support_polys), key=lambda x: x[1].area)[0]
+
+        pts = trimesh.path.polygons.sample(
+                            support_polys[support_index], count=3000
+                        )
+        z_arr = np.full((len(pts), 1), 0)
+        o_arr = np.full((len(pts), 1), 1)
+
+        sup_point_cloud = np.hstack((pts, z_arr))
+        sup_point_cloud = np.hstack((sup_point_cloud, o_arr))
+
+        transformed_point_cloud = np.dot(support_T[support_index][:3], 
+                                         sup_point_cloud.T).T + self.scene_mngr.scene.objs[sup_obj_name[support_index]].h_mat[:3,3]
+
+        return transformed_point_cloud
 
 class SceneRenderer:
     def __init__(

@@ -27,6 +27,7 @@ for pick_action in pick_actions:
                     benchmark1.robot,
                     pose=all_release_pose[place.move_data.MOVE_release],
                 )
+                
 place.scene_mngr.render_objects(ax)
 p_utils.plot_basis(ax)
 pick.show()

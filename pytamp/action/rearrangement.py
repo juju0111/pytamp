@@ -75,7 +75,9 @@ class RearrangementAction(ActivityBase):
                 )
                 if not action_level_1:
                     continue
-            
+                
+                # if not action_level_1['rearr_poses']:
+                #     self.scene_mngr.render_debug(title="Collision Fail")
                 yield action_level_1
 
     def get_action_level_1_for_single_object(
@@ -101,7 +103,8 @@ class RearrangementAction(ActivityBase):
                 obj_name, scene_for_sample, sample_num=self.n_sample
             )
         )
-        location.append(goal_location)
+        if not (obj_name in self.scene_mngr.scene.rearranged_object):
+            location.append(goal_location)
         # print(f"first {obj_name} : ", location)
 
         if self.use_pick_action:
@@ -394,16 +397,22 @@ class RearrangementAction(ActivityBase):
                             )
                         if self._collide(is_only_gripper=True):
                             is_collision = True
+                            # if is_collision:
+                            #     self.scene_mngr.render_debug(title="Collision Fail")
                             break
                     if name == self.move_data.MOVE_pre_release:
                         self.scene_mngr.set_gripper_pose(pose)
                         if self._collide(is_only_gripper=True):
                             is_collision = True
+                            # if is_collision:
+                            #     self.scene_mngr.render_debug(title="Collision Fail")
                             break
                     if name == self.move_data.MOVE_post_release:
                         self.scene_mngr.set_gripper_pose(pose)
                         if self._collide(is_only_gripper=True):
                             is_collision = True
+                            # if is_collision:
+                            #     self.scene_mngr.render_debug(title="Collision Fail")
                             break
 
                 self.scene_mngr.detach_object_from_gripper()
