@@ -14,9 +14,7 @@ from pytamp.utils.making_scene_utils import Make_Scene
 
 
 class RearrangementAction(ActivityBase):
-    def __init__(
-        self, scene_mngr, n_sample=1, retreat_distance=0.1, release_distance=0.01
-    ):
+    def __init__(self, scene_mngr, n_sample=1, retreat_distance=0.1, release_distance=0.01):
         super().__init__(scene_mngr)
 
         self.n_sample = n_sample
@@ -75,7 +73,7 @@ class RearrangementAction(ActivityBase):
                 )
                 if not action_level_1:
                     continue
-                
+
                 # if not action_level_1['rearr_poses']:
                 #     self.scene_mngr.render_debug(title="Collision Fail")
                 yield action_level_1
@@ -86,10 +84,10 @@ class RearrangementAction(ActivityBase):
         """
         A function to get the possible actions for the desired object
 
-        Args 
+        Args
             obj_name : which object do you want
             scene_for_sample : scene made by Acronym scene.
-        Return 
+        Return
             action : Collision free actions
         """
         # return possible position
@@ -99,9 +97,7 @@ class RearrangementAction(ActivityBase):
 
         # sample_arbitrary_location
         location = list(
-            self.get_arbitrary_location(
-                obj_name, scene_for_sample, sample_num=self.n_sample
-            )
+            self.get_arbitrary_location(obj_name, scene_for_sample, sample_num=self.n_sample)
         )
         if not (obj_name in self.scene_mngr.scene.rearranged_object):
             location.append(goal_location)
@@ -113,17 +109,15 @@ class RearrangementAction(ActivityBase):
             )
             action = self.get_action(obj_name, release_poses_not_collision)
         else:
-            obj_poses_not_collision = list(
-                self.get_goal_location_not_collision(obj_name, location)
-            )
+            obj_poses_not_collision = list(self.get_goal_location_not_collision(obj_name, location))
             action = self.get_action_only_rearr(obj_name, obj_poses_not_collision)
-        
+
         return action
 
     def get_goal_location(self, obj_name: str) -> dict:
         """
         A function that gets a known position from a given goal scene
-        
+
         Args
             obj_name :
         Return
@@ -134,9 +128,7 @@ class RearrangementAction(ActivityBase):
 
         goal_location = {}
         goal_sup_object = "table"
-        goal_location[goal_sup_object] = self.scene_mngr.scene.goal_object_poses[
-            obj_name
-        ]
+        goal_location[goal_sup_object] = self.scene_mngr.scene.goal_object_poses[obj_name]
         return goal_location, goal_sup_object
 
     def get_arbitrary_location(
@@ -191,23 +183,17 @@ class RearrangementAction(ActivityBase):
         success_joint_path = True
 
         self.scene_mngr.set_robot_eef_pose(default_thetas)
-        self.scene_mngr.set_object_pose(
-            scene.pick_obj_name, scene.pick_obj_default_pose
-        )
+        self.scene_mngr.set_object_pose(scene.pick_obj_name, scene.pick_obj_default_pose)
         self.scene_mngr.attach_object_on_gripper(
             self.scene_mngr.scene.robot.gripper.attached_obj_name, True
         )
 
-        pre_release_joint_path = self.get_rrt_star_path(
-            default_thetas, pre_release_pose
-        )
+        pre_release_joint_path = self.get_rrt_star_path(default_thetas, pre_release_pose)
         self.cost = 0
         if pre_release_joint_path:
             self.cost += self.rrt_planner.goal_node_cost
             # pre_release_pose -> release_pose (cartesian)
-            release_joint_path = self.get_cartesian_path(
-                pre_release_joint_path[-1], release_pose
-            )
+            release_joint_path = self.get_cartesian_path(pre_release_joint_path[-1], release_pose)
             if release_joint_path:
                 self.scene_mngr.detach_object_from_gripper()
                 self.scene_mngr.add_object(
@@ -262,23 +248,17 @@ class RearrangementAction(ActivityBase):
 
         if default_joint_path:
             self.cost += self.rrt_planner.goal_node_cost
-            result_joint_path.update(
-                {self.move_data.MOVE_pre_release: pre_release_joint_path}
-            )
+            result_joint_path.update({self.move_data.MOVE_pre_release: pre_release_joint_path})
             result_joint_path.update({self.move_data.MOVE_release: release_joint_path})
-            result_joint_path.update(
-                {self.move_data.MOVE_post_release: post_release_joint_path}
-            )
-            result_joint_path.update(
-                {self.move_data.MOVE_default_release: default_joint_path}
-            )
+            result_joint_path.update({self.move_data.MOVE_post_release: post_release_joint_path})
+            result_joint_path.update({self.move_data.MOVE_default_release: default_joint_path})
             result_all_joint_path.append(result_joint_path)
 
             return result_all_joint_path
 
     def get_possible_transitions(self, scene: Scene = None, action: dict = {}):
         """
-        working on table top_scene 
+        working on table top_scene
         Args:
             scene (Scene) : Current scene where the assigned object was not moved
             action (dict) : Assigned object target position
@@ -300,9 +280,7 @@ class RearrangementAction(ActivityBase):
                 next_scene = deepcopy(scene)
                 next_scene.rearr_poses = rearr_pose
 
-                next_scene.robot.gripper.release_pose = rearr_pose[
-                    self.move_data.MOVE_release
-                ]
+                next_scene.robot.gripper.release_pose = rearr_pose[self.move_data.MOVE_release]
 
                 default_thetas = self.scene_mngr.scene.robot.init_qpos
                 default_pose = self.scene_mngr.scene.robot.forward_kin(default_thetas)[
@@ -310,9 +288,7 @@ class RearrangementAction(ActivityBase):
                 ].h_mat
                 next_scene.robot.gripper.set_gripper_pose(default_pose)
 
-                next_scene.objs[held_obj_name].h_mat = obj_pose_transformed[
-                    place_obj_name
-                ]
+                next_scene.objs[held_obj_name].h_mat = obj_pose_transformed[place_obj_name]
                 self.scene_mngr.obj_collision_mngr.set_transform(
                     held_obj_name, obj_pose_transformed[place_obj_name]
                 )
@@ -332,10 +308,9 @@ class RearrangementAction(ActivityBase):
                 next_scene.logical_states[held_obj_name][
                     next_scene.logical_state.on
                 ] = next_scene.objs[place_obj_name]
-
-                # Add gparam_center_mass for pointcloud sample 
+                # Add gparam_center_mass for pointcloud sample
                 # TODO
-                
+
                 yield next_scene
 
         else:
@@ -349,7 +324,7 @@ class RearrangementAction(ActivityBase):
 
                 # Move object to goal location
                 next_scene.objs[name].h_mat = deepcopy(pose)
-                # Add gparam_center_mass for pointcloud sample 
+                # Add gparam_center_mass for pointcloud sample
                 # TODO
                 yield next_scene
 
@@ -359,7 +334,7 @@ class RearrangementAction(ActivityBase):
         Args
             location : want to move to a specific location
         Return
-            location : not collide with current scene. 
+            location : not collide with current scene.
 
         """
         for i in location:
@@ -446,7 +421,7 @@ class RearrangementAction(ActivityBase):
         Args
             location : want to move to a specific location
         Return
-            location : not collide with current scene. 
+            location : not collide with current scene.
 
         """
         for i in location:
@@ -470,33 +445,25 @@ class RearrangementAction(ActivityBase):
         release_pose = {}
         eef_pose = eef_pose.astype(np.float32)
         release_pose[self.move_data.MOVE_release] = eef_pose
-        release_pose[self.move_data.MOVE_pre_release] = self.get_pre_release_pose(
-            eef_pose
-        )
-        release_pose[self.move_data.MOVE_post_release] = self.get_post_release_pose(
-            eef_pose
-        )
+        release_pose[self.move_data.MOVE_pre_release] = self.get_pre_release_pose(eef_pose)
+        release_pose[self.move_data.MOVE_post_release] = self.get_post_release_pose(eef_pose)
         return release_pose
 
     def get_pre_release_pose(self, release_pose):
-        pre_release_pose = np.eye(4,dtype=np.float32)
+        pre_release_pose = np.eye(4, dtype=np.float32)
         pre_release_pose[:3, :3] = release_pose[:3, :3]
-        pre_release_pose[:3, 3] = release_pose[:3, 3] + np.array(
-            [0, 0, self.retreat_distance]
-        )
+        pre_release_pose[:3, 3] = release_pose[:3, 3] + np.array([0, 0, self.retreat_distance])
         return pre_release_pose
 
     def get_post_release_pose(self, release_pose):
-        post_release_pose = np.eye(4,dtype=np.float32)
+        post_release_pose = np.eye(4, dtype=np.float32)
         post_release_pose[:3, :3] = release_pose[:3, :3]
         if self.scene_mngr.scene.bench_num != 3:
             post_release_pose[:3, 3] = (
                 release_pose[:3, 3] - self.retreat_distance * release_pose[:3, 2]
             )
         else:
-            post_release_pose[:3, 3] = release_pose[:3, 3] + np.array(
-                [0, 0, self.retreat_distance]
-            )
+            post_release_pose[:3, 3] = release_pose[:3, 3] + np.array([0, 0, self.retreat_distance])
         return post_release_pose
 
     def get_action(self, obj_name: str, possible_action):
@@ -511,12 +478,12 @@ class RearrangementAction(ActivityBase):
 
         action[self.info.REARR_POSES] = possible_action
         return action
-    
+
     def get_action_only_rearr(self, obj_name: str, possible_action):
         action = {}
         action[self.info.TYPE] = "rearr"
         action[self.info.REARR_OBJ_NAME] = obj_name
-        if possible_action: 
+        if possible_action:
             action[self.info.PLACE_OBJ_NAME] = list(possible_action[-1].keys())[0]
         else:
             action[self.info.PLACE_OBJ_NAME] = list()
