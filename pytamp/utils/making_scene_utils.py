@@ -163,7 +163,9 @@ class Make_Scene(Scene_ACRONYM):
                         break
             else:
                 pts = trimesh.path.polygons.sample(support_polys[support_index], count=1)
-
+                # for robot arm reach
+                if np.sum(pts[0]) ** 2 > 0.9:
+                    continue
             # To avoid collisions with the support surface
             pts3d = np.append(pts, distance_above_support)
 

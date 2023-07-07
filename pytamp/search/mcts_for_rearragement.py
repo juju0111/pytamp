@@ -713,7 +713,7 @@ class MCTS_rearrangement:
                     # When you place well on your goal
                     if self.next_rearr_obj_num - self.prev_rearr_obj_num == 1:
                         print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                        return abs(reward) / ((depth + 2) / 2) * 10
+                        return abs(reward) / ((depth + 2) / 2) * 5
                     # When you place object on the target again
                     if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                         print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
