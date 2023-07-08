@@ -6,7 +6,7 @@ from pytamp.benchmark.benchmark import Benchmark
 from pytamp.utils.making_scene_utils import Make_Scene
 from pytamp.scene.scene_manager import SceneManager
 
-import trimesh 
+import trimesh
 import easydict
 from copy import deepcopy
 
@@ -16,6 +16,7 @@ from pykin.utils import mesh_utils as m_utils
 
 
 from pykin.utils.kin_utils import ShellColors as sc
+
 
 class Rearrange1(Benchmark):
     def __init__(
@@ -156,6 +157,7 @@ class Rearrange1(Benchmark):
             pose = scene_mngr.scene.objs[o_name].h_mat
             scene_mngr.render.render_axis(pose)
 
+
 def make_scene():
     def custom_parser():
         # object는 parser.add_argument( ~ , nargs="+") , nargs="+" 때문에 list로 arg 셋팅함
@@ -196,7 +198,7 @@ def make_scene():
             object_names.append(get_obj_name(obj_dict, o))
         if ".stl" in o:
             if "cube" in o:
-                object_meshes.append(get_object_mesh(o, 0.075))
+                object_meshes.append(get_object_mesh(o, 0.05))
                 object_names.append(get_obj_name(obj_dict, o))
             else:
                 object_meshes.append(get_object_mesh(o))

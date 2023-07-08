@@ -19,8 +19,13 @@ def get_obj_point_clouds(sample_scene: Make_Scene, scene: Scene, manipulate_obj_
         # The support object only considers the top plane
         # So there is no need for point clouds in other parts of the mesh except for the top plane.
         name, i = item
-        if name in sample_scene._support_objects.keys():
-            pass_count += 1
+        pass_bool = False
+        for k in sample_scene._support_objects.keys():
+            if k in name:
+                pass_count += 1
+                pass_bool = True
+                continue
+        if pass_bool:
             continue
 
         copied_mesh = deepcopy(i.gparam)
@@ -32,7 +37,7 @@ def get_obj_point_clouds(sample_scene: Make_Scene, scene: Scene, manipulate_obj_
             np.float32
         )  # how many PC do you want to sample! you can change number.
         if manipulate_obj_name == name:
-            pc_segments[name] = np.array(points, dtype=np.float32)
+            pc_segments[manipulate_obj_name] = np.array(points, dtype=np.float32)
             pc_count = _
 
         color = (np.ones((sample_num, 3)) * scene.objs[name].color).astype(np.uint8)
@@ -66,7 +71,9 @@ def get_support_space_point_cloud(sample_scene: Make_Scene, scene: Scene):
         + scene.objs[sup_obj_name[support_index]].h_mat[:3, 3]
     )
 
-    color = (np.ones((sample_num, 3)) * scene.objs[sup_obj_name[support_index]].color).astype(np.int8)
+    color = (np.ones((sample_num, 3)) * scene.objs[sup_obj_name[support_index]].color).astype(
+        np.int8
+    )
     pc_colors = np.vstack([pc_colors, color])
 
     return transformed_point_cloud, pc_colors[1:]
@@ -109,9 +116,38 @@ def get_combined_point_cloud(
         ]
     )
 
+    # shift xyz on current_pc
     transition_xy = next_mean - current_mean
 
     transformed_current_pc = transformed_pc + transition_xy
 
     combined_pc = np.vstack([n_pc, transformed_current_pc])
-    return combined_pc
+    return combined_pc, transition_xy, cTn
+
+
+def get_combined_pc_from_mixed_scene(rearr_action, next_scene, current_scene, obj_to_manipulate):
+    rearr_action.deepcopy_scene(next_scene)
+
+    for name, obj in next_scene.objs.items():
+        rearr_action.scene_mngr.set_object_pose(name, obj.h_mat)
+
+    currnent_obj_pose = deepcopy(current_scene.objs[obj_to_manipulate].h_mat)
+    transformed_h_mat = np.eye(4)
+    for name, obj in current_scene.objs.items():
+        name_ = name + "_current"
+        if name == obj_to_manipulate:
+            rel_T = m_utils.get_relative_transform(
+                current_scene.objs[obj_to_manipulate].h_mat,
+                next_scene.objs[obj_to_manipulate].h_mat,
+            )
+            transformed_h_mat = deepcopy(obj.h_mat) @ rel_T
+
+        else:
+            rel_T = m_utils.get_relative_transform(currnent_obj_pose, obj.h_mat)
+
+            transformed_h_mat = deepcopy(next_scene.objs[obj_to_manipulate].h_mat) @ rel_T
+
+        rearr_action.scene_mngr.add_object(
+            name_, obj.gtype, obj.gparam, transformed_h_mat, obj.color - 3
+        )
+    return rearr_action

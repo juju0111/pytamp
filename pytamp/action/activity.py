@@ -1,9 +1,11 @@
 from abc import abstractclassmethod, ABCMeta
 from dataclasses import dataclass
 from copy import deepcopy
+import numpy as np
 
 from pykin.utils.mesh_utils import surface_sampling
 from pykin.utils import plot_utils as p_utils
+from pykin.utils import mesh_utils as m_utils
 from pytamp.planners.cartesian_planner import CartesianPlanner
 from pytamp.planners.rrt_star_planner import RRTStarPlanner
 from pytamp.scene.scene_manager import SceneManager
@@ -55,9 +57,7 @@ class ActivityBase(metaclass=ABCMeta):
         self.scene_mngr.update_logical_states(True)
 
         if self.scene_mngr.scene.robot is not None:
-            self.cartesian_planner = CartesianPlanner(
-                dimension=self.scene_mngr.scene.robot.arm_dof
-            )
+            self.cartesian_planner = CartesianPlanner(dimension=self.scene_mngr.scene.robot.arm_dof)
             self.rrt_planner = RRTStarPlanner(
                 delta_distance=0.05,
                 epsilon=0.2,
@@ -122,12 +122,8 @@ class ActivityBase(metaclass=ABCMeta):
         )
         return self.cartesian_planner.get_joint_path()
 
-    def get_rrt_star_path(
-        self, cur_q, goal_pose=None, goal_q=None, max_iter=500, n_step=10
-    ):
-        self.rrt_planner.run(
-            self.scene_mngr, cur_q, goal_pose, goal_q=goal_q, max_iter=max_iter
-        )
+    def get_rrt_star_path(self, cur_q, goal_pose=None, goal_q=None, max_iter=500, n_step=10):
+        self.rrt_planner.run(self.scene_mngr, cur_q, goal_pose, goal_q=goal_q, max_iter=max_iter)
         return self.rrt_planner.get_joint_path(n_step=n_step)
 
     def simulate_path(
@@ -186,9 +182,7 @@ class ActivityBase(metaclass=ABCMeta):
                         result_joint.append(joint)
                         fk = self.scene_mngr.scene.robot.forward_kin(joint)
                         if visible_path:
-                            eef_poses.append(
-                                fk[self.scene_mngr.scene.robot.eef_name].pos
-                            )
+                            eef_poses.append(fk[self.scene_mngr.scene.robot.eef_name].pos)
 
             if ax is None and fig is None:
                 fig, ax = p_utils.init_3d_figure(name="Level wise 2")
@@ -216,3 +210,34 @@ class ActivityBase(metaclass=ABCMeta):
 
     def show(self):
         self.scene_mngr.show()
+
+    def get_combined_pc_from_mixed_scene(self, next_scene, current_scene, obj_to_manipulate):
+        self.deepcopy_scene(next_scene)
+
+        for name, obj in next_scene.objs.items():
+            self.scene_mngr.set_object_pose(name, obj.h_mat)
+
+        currnent_obj_pose = deepcopy(current_scene.objs[obj_to_manipulate].h_mat)
+        transformed_h_mat = np.eye(4)
+        for name, obj in current_scene.objs.items():
+            name_ = name + "_current"
+            if name == obj_to_manipulate:
+                rel_T = m_utils.get_relative_transform(
+                    current_scene.objs[obj_to_manipulate].h_mat,
+                    next_scene.objs[obj_to_manipulate].h_mat,
+                )
+                transformed_h_mat = deepcopy(obj.h_mat) @ rel_T
+
+            else:
+                rel_T = m_utils.get_relative_transform(currnent_obj_pose, obj.h_mat)
+                transformed_h_mat = deepcopy(next_scene.objs[obj_to_manipulate].h_mat) @ rel_T
+
+            self.scene_mngr.add_object(
+                name_, obj.gtype, obj.gparam, transformed_h_mat, obj.color - 3
+            )
+
+    def remove_mixed_scene(self):
+        keys = deepcopy(self.scene_mngr.scene.objs)
+        for i in keys:
+            if "current" in i:
+                self.scene_mngr.remove_object(i)
