@@ -56,7 +56,7 @@ def get_support_space_point_cloud(sample_scene: Make_Scene, scene: Scene):
     sample_num = 3000
 
     support_polys, support_T, sup_obj_name = sample_scene._get_support_polygons()
-    print("sup_obj :", sup_obj_name)
+    # print("sup_obj :", sup_obj_name)
     support_index = max(enumerate(support_polys), key=lambda x: x[1].area)[0]
 
     pts = trimesh.path.polygons.sample(support_polys[support_index], count=sample_num)
@@ -151,3 +151,4 @@ def get_combined_pc_from_mixed_scene(rearr_action, next_scene, current_scene, ob
             name_, obj.gtype, obj.gparam, transformed_h_mat, obj.color - 3
         )
     return rearr_action
+
