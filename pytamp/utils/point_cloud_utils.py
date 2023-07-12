@@ -6,7 +6,6 @@ from pykin.utils import mesh_utils as m_utils
 from pytamp.utils.making_scene_utils import Make_Scene
 from pytamp.scene.scene import Scene
 
-
 def get_obj_point_clouds(sample_scene: Make_Scene, scene: Scene, manipulate_obj_name):
     pc_full = trimesh.PointCloud(np.zeros((1, 3))).vertices
     pc_segments = {}
@@ -125,7 +124,7 @@ def get_combined_point_cloud(
     return combined_pc, transition_xy, cTn
 
 
-def get_combined_pc_from_mixed_scene(rearr_action, next_scene, current_scene, obj_to_manipulate):
+def get_mixed_scene(rearr_action, next_scene, current_scene, obj_to_manipulate):
     rearr_action.deepcopy_scene(next_scene)
 
     for name, obj in next_scene.objs.items():

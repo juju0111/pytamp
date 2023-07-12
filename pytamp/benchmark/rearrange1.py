@@ -182,7 +182,7 @@ def make_scene():
     args = custom_parser()
 
     args.objects.append("ben_cube.stl")
-    # args.objects.append("bottle.stl")
+    args.objects.append("bottle.stl")
     args.objects.append("can.stl")
     args.objects.append("can.stl")
     args.objects.append("milk.stl")
@@ -213,7 +213,8 @@ def make_scene():
         object_meshes,
         "table",
         support_mesh,
-        for_goal_scene=False,
+        # for_goal_scene=False,
+        for_goal_scene=True,
         gaussian=[-0.1, 0, 0.15, 0.15],
     )
     goal_scene = Make_Scene.random_arrangement(

@@ -211,7 +211,7 @@ class ActivityBase(metaclass=ABCMeta):
     def show(self):
         self.scene_mngr.show()
 
-    def get_combined_pc_from_mixed_scene(self, next_scene, current_scene, obj_to_manipulate):
+    def get_mixed_scene(self, next_scene, current_scene, obj_to_manipulate):
         self.deepcopy_scene(next_scene)
 
         for name, obj in next_scene.objs.items():
