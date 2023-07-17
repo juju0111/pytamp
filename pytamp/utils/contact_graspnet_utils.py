@@ -277,7 +277,7 @@ class Grasp_Using_Contact_GraspNet:
         obj_to_manipulate = current_node['action']['rearr_obj_name']
 
         if next_node != None:
-            self.action.get_mixed_scene(
+            self.action.get_mixed_scene_on_current(
                             next_scene=next_node['state'],\
                             current_scene=current_node['state'],\
                             obj_to_manipulate=obj_to_manipulate
@@ -310,5 +310,5 @@ class Grasp_Using_Contact_GraspNet:
         collision_free_grasps = self.change_grasp_to_world_coord(pred_grasps_cam, obj_to_manipulate)
 
         self.action.remove_mixed_scene()
-
+        
         return collision_free_grasps

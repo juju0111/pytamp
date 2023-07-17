@@ -16,7 +16,7 @@ from pytamp.utils.making_scene_utils import Make_Scene
 
 from pykin.utils import plot_utils as p_utils
 from pykin.utils.kin_utils import ShellColors as sc
-
+from pytamp.utils.contact_graspnet_utils import Grasp_Using_Contact_GraspNet
 
 class MCTS_rearrangement:
     def __init__(
@@ -143,6 +143,7 @@ class MCTS_rearrangement:
         self.optimal_nodes = []
         self.only_optimize_1 = False
         self.has_aleardy_level_1_optimal_nodes = False
+        self.grasp_generator = Grasp_Using_Contact_GraspNet(self.rearr_action)
 
     def _create_tree(self, state: Scene):
         tree = nx.DiGraph()
@@ -220,7 +221,8 @@ class MCTS_rearrangement:
                         self.values_for_level_2.append(
                             self.get_max_value_level_2(success_level_1_sub_nodes)
                         )
-
+                    
+                    
                     self.history_level_1_optimal_nodes.append(success_level_1_sub_nodes)
                     self.history_level_1_values.append(
                         self.tree.nodes[0][NodeData.VALUE_HISTORY][-1]
@@ -229,6 +231,8 @@ class MCTS_rearrangement:
                         nodes=success_level_1_sub_nodes,
                         value=self.tree.nodes[0][NodeData.VALUE_HISTORY][-1],
                     )
+                    print("Add level_1_node!")
+
 
                 else:
                     self.values_for_level_2.append(self.level2_max_value)
@@ -820,6 +824,35 @@ class MCTS_rearrangement:
         #             reward = 1
 
         return reward
+    
+    def _level_wise_hidden_step_optimize(self, sub_optimal_nodes):
+        if not sub_optimal_nodes:
+            print(f"{sc.FAIL}Not found any sub optimal nodes.{sc.ENDC}")
+            return
+
+        if self.tree.nodes[0][NodeData.SUCCESS]:
+            if self.tree.nodes[0][NodeData.VALUE_HISTORY][-1] < self.tree.nodes[0][NodeData.VALUE]:
+                print(
+                    f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
+                )
+                return
+            
+        for infeasible_node in self.infeasible_sub_nodes:
+            if set(sub_optimal_nodes).issubset(infeasible_node):
+                print(
+                    f"{sc.FAIL}This optimal subnodes({infeasible_node}) is infeasible subnodes.{sc.ENDC}"
+                )
+                return
+        
+        self.show_logical_actions(sub_optimal_nodes)
+
+        if self.debug_mode:
+            subtree = self.get_success_subtree(optimizer_level=1)
+            self.visualize_tree("Success nodes", subtree)
+
+        # TODO
+        # using graspgenenrator pick action에서 어떻게 grasp추가하는지 보고 추가시키면 됨!! 
+        # 쉽다. 
 
     def _level_wise_2_optimize(self, sub_optimal_nodes):
         if not sub_optimal_nodes:
@@ -1085,6 +1118,24 @@ class MCTS_rearrangement:
                     )
             return self.level2_max_value
 
+    def get_grasp_at_current_scene(self, nodes:list, idx:int, consider_next_scene:bool = True):
+        current_node = self.tree.nodes[nodes[2*idx+1]]
+        next_node = self.tree.nodes[nodes[2*(idx+1)]]
+
+        if consider_next_scene:
+            grasp_poses = self.grasp_generator.get_grasp(
+                init_scene = self.init_scene,
+                next_node = next_node,
+                current_node = current_node,
+                )
+        else:
+            grasp_poses = self.grasp_generator.get_grasp(
+                init_scene = self.init_scene,
+                next_node = None,
+                current_node = current_node,
+                )
+        return grasp_poses
+    
     def get_all_joint_path(self, nodes):
         pnp_all_joint_path = []
         place_all_object_poses = []

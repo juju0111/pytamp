@@ -211,7 +211,8 @@ class ActivityBase(metaclass=ABCMeta):
     def show(self):
         self.scene_mngr.show()
 
-    def get_mixed_scene(self, next_scene, current_scene, obj_to_manipulate):
+    def get_mixed_scene_on_next(self, next_scene, current_scene, obj_to_manipulate):
+        self.remove_mixed_scene()
         self.deepcopy_scene(next_scene)
 
         for name, obj in next_scene.objs.items():
@@ -236,8 +237,34 @@ class ActivityBase(metaclass=ABCMeta):
                 name_, obj.gtype, obj.gparam, transformed_h_mat, obj.color - 3
             )
 
+    def get_mixed_scene_on_current(self, next_scene, current_scene, obj_to_manipulate):
+        self.remove_mixed_scene()
+        self.deepcopy_scene(current_scene)
+
+        for name, obj in current_scene.objs.items():
+            self.scene_mngr.set_object_pose(name, obj.h_mat)
+
+        next_obj_pose = deepcopy(next_scene.objs[obj_to_manipulate].h_mat)
+        transformed_h_mat = np.eye(4)
+        for name, obj in next_scene.objs.items():
+            name_ = name + "_next"
+            if name == obj_to_manipulate:
+                rel_T = m_utils.get_relative_transform(
+                    next_scene.objs[obj_to_manipulate].h_mat,
+                    current_scene.objs[obj_to_manipulate].h_mat,
+                )
+                transformed_h_mat = deepcopy(obj.h_mat) @ rel_T
+
+            else:
+                rel_T = m_utils.get_relative_transform(next_obj_pose, obj.h_mat)
+                transformed_h_mat = deepcopy(current_scene.objs[obj_to_manipulate].h_mat) @ rel_T
+
+            self.scene_mngr.add_object(
+                name_, obj.gtype, obj.gparam, transformed_h_mat, obj.color - 3
+            )
+
     def remove_mixed_scene(self):
         keys = deepcopy(self.scene_mngr.scene.objs)
         for i in keys:
-            if "current" in i:
+            if ("current" in i) or ("next" in i):
                 self.scene_mngr.remove_object(i)
