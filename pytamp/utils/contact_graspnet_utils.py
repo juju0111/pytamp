@@ -162,7 +162,7 @@ class Grasp_Using_Contact_GraspNet:
             else:
                 print(
                     "skipping obj {} since  np.any(pc_segments[k]) {} and np.any(contact_pts[j]) is {}".format(
-                        k, np.any(pc_segment), np.any(contact_pts[j])
+                        k, np.any(pc_segment), np.any(contact_pts[k])
                     )
                 )
 
@@ -236,27 +236,27 @@ class Grasp_Using_Contact_GraspNet:
         pred_grasps_world[obj_to_manipulate] = (
             self.w_T_cam @ pred_grasps_cam_augment[obj_to_manipulate]
         )
-        print("Generated Grasp in world coord :", pred_grasps_world[obj_to_manipulate].shape)
+        # print("Generated Grasp in world coord :", pred_grasps_world[obj_to_manipulate].shape)
 
         collision_free_grasps = collision_check_using_contact_graspnet(
             pred_grasps_world[obj_to_manipulate]
         )
-        print("Collision free grasps step 1 : ", collision_free_grasps.shape)
+        # print("Collision free grasps step 1 : ", collision_free_grasps.shape)
 
         if not len(collision_free_grasps):
             pred_grasps_world_augment[obj_to_manipulate] = (
                 self.w_T_cam @ pred_grasps_cam[obj_to_manipulate]
             )
-            print(
-                "Augment 1 _z axis 90' rotation ",
-                pred_grasps_world_augment[obj_to_manipulate].shape,
-                pred_grasps_world[obj_to_manipulate].shape,
-            )
+            # print(
+            #     "Augment 1 _z axis 90' rotation ",
+            #     pred_grasps_world_augment[obj_to_manipulate].shape,
+            #     pred_grasps_world[obj_to_manipulate].shape,
+            # )
 
             collision_free_grasps = collision_check_using_contact_graspnet(
                 pred_grasps_world_augment[obj_to_manipulate]
             )
-            print("Collision free grasps step 2 : ", collision_free_grasps.shape)
+            # print("Collision free grasps step 2 : ", collision_free_grasps.shape)
 
         augmented_grasps = []
         if not len(collision_free_grasps):

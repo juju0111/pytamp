@@ -14,7 +14,7 @@ from pytamp.utils.making_scene_utils import Make_Scene
 
 
 class RearrangementAction(ActivityBase):
-    def __init__(self, scene_mngr, n_sample=1, retreat_distance=0.1, release_distance=0.01):
+    def __init__(self, scene_mngr, n_sample=1, retreat_distance=0.05, release_distance=0.01):
         super().__init__(scene_mngr)
 
         self.n_sample = n_sample
@@ -292,7 +292,174 @@ class RearrangementAction(ActivityBase):
             result_all_joint_path.append(result_joint_path)
 
             return result_all_joint_path
+        
+    def get_possible_joint_path_level_2_for_rearr(
+        self, scene: Scene = None, release_poses: dict = {}, init_thetas=None
+    ):
+        self.deepcopy_scene(scene)
 
+        result_all_joint_path = []
+        result_joint_path = OrderedDict()
+        default_joint_path = []
+
+        default_thetas = init_thetas
+        if init_thetas is None:
+            default_thetas = self.scene_mngr.scene.robot.init_qpos
+
+        pre_release_pose = release_poses[self.move_data.MOVE_pre_release]
+        release_pose = release_poses[self.move_data.MOVE_release]
+        post_release_pose = release_poses[self.move_data.MOVE_post_release]
+        success_joint_path = True
+
+        self.scene_mngr.attach_object_on_gripper(
+            scene.rearr_obj_name, True
+        )
+
+        pre_release_joint_path = self.get_rrt_star_path(default_thetas, pre_release_pose)
+        self.cost = 0
+        if pre_release_joint_path:
+            self.cost += self.rrt_planner.goal_node_cost
+            # pre_release_pose -> release_pose (cartesian)
+            release_joint_path = self.get_cartesian_path(pre_release_joint_path[-1], release_pose)
+            if release_joint_path:
+                self.scene_mngr.detach_object_from_gripper()
+                self.scene_mngr.add_object(
+                    self.scene_mngr.attached_obj_name,
+                    self.scene_mngr.init_objects[
+                        self.scene_mngr.attached_obj_name
+                    ].gtype,
+                    self.scene_mngr.init_objects[
+                        self.scene_mngr.attached_obj_name
+                    ].gparam,
+                    scene.objs[scene.rearr_obj_name].h_mat,
+                    self.scene_mngr.init_objects[
+                        self.scene_mngr.attached_obj_name
+                    ].color,
+                )
+                # release_pose -> post_release_pose (cartesian)
+                post_release_joint_path = self.get_cartesian_path(
+                    release_joint_path[-1], post_release_pose
+                )
+                if post_release_joint_path:
+                    # post_release_pose -> default pose (rrt)
+                    default_joint_path = self.get_rrt_star_path(
+                        post_release_joint_path[-1], goal_q=default_thetas
+                    )
+                else:
+                    success_joint_path = False
+            else:
+                success_joint_path = False
+        else:
+            success_joint_path = False
+
+        if not success_joint_path:
+            if self.scene_mngr.is_attached:
+                self.scene_mngr.detach_object_from_gripper()
+            try:
+                self.scene_mngr.add_object(
+                    self.scene_mngr.scene.robot.gripper.attached_obj_name,
+                    self.scene_mngr.init_objects[
+                        self.scene_mngr.scene.robot.gripper.attached_obj_name
+                    ].gtype,
+                    self.scene_mngr.init_objects[
+                        self.scene_mngr.scene.robot.gripper.attached_obj_name
+                    ].gparam,
+                    scene.objs[scene.rearr_obj_name].h_mat,
+                    self.scene_mngr.init_objects[
+                        self.scene_mngr.scene.robot.gripper.attached_obj_name
+                    ].color,
+                )
+            except ValueError as e:
+                print(e)
+            return result_all_joint_path
+
+        if default_joint_path:
+            self.cost += self.rrt_planner.goal_node_cost
+            result_joint_path.update({self.move_data.MOVE_pre_release: pre_release_joint_path})
+            result_joint_path.update({self.move_data.MOVE_release: release_joint_path})
+            result_joint_path.update({self.move_data.MOVE_post_release: post_release_joint_path})
+            result_joint_path.update({self.move_data.MOVE_default_release: default_joint_path})
+            result_all_joint_path.append(result_joint_path)
+
+            return result_all_joint_path
+        
+    def get_possible_joint_path_level_2_for_grasp(
+        self, scene: Scene = None, grasp_poses: dict = {}, init_thetas=None
+    ):
+        # collision check is already calculated for grasp_poses
+        self.deepcopy_scene(scene)
+
+        result_all_joint_path = []
+        result_joint_path = OrderedDict()
+        default_joint_path = []
+
+        default_thetas = init_thetas
+        if init_thetas is None:
+            default_thetas = self.scene_mngr.scene.robot.init_qpos
+
+        pre_grasp_pose = grasp_poses[self.move_data.MOVE_pre_grasp]
+        grasp_pose = grasp_poses[self.move_data.MOVE_grasp]
+        post_grasp_pose = grasp_poses[self.move_data.MOVE_post_grasp]
+        success_joint_path = True
+
+        self.scene_mngr.set_robot_eef_pose(default_thetas)
+        self.scene_mngr.set_object_pose(scene.rearr_obj_name, scene.rearr_obj_default_pose)
+
+        pre_grasp_joint_path = self.get_rrt_star_path(default_thetas, pre_grasp_pose)
+        self.cost = 0
+        if pre_grasp_joint_path:
+            self.cost += self.rrt_planner.goal_node_cost
+
+            # pre_graso_pose -> graso_pose (cartesian)
+            grasp_joint_path = self.get_cartesian_path(pre_grasp_joint_path[-1], grasp_pose)
+            if grasp_joint_path:
+                self.scene_mngr.set_robot_eef_pose(grasp_joint_path[-1])
+                self.scene_mngr.attach_object_on_gripper(
+                    scene.rearr_obj_name
+                )
+                # grasp_pose -> post_graso_pose (cartesian)
+                post_grasp_joint_path = self.get_cartesian_path(
+                    grasp_joint_path[-1], post_grasp_pose
+                )
+
+                if post_grasp_joint_path:
+                    # post_grasp_pose -> default pose (rrt)
+                    default_joint_path = self.get_rrt_star_path(
+                        post_grasp_joint_path[-1], goal_q=default_thetas
+                    )
+                else:
+                    success_joint_path = False
+                self.scene_mngr.detach_object_from_gripper()
+                self.scene_mngr.add_object(
+                    self.scene_mngr.attached_obj_name,
+                    self.scene_mngr.init_objects[
+                        self.scene_mngr.attached_obj_name
+                    ].gtype,
+                    self.scene_mngr.init_objects[
+                        self.scene_mngr.attached_obj_name
+                    ].gparam,
+                    scene.objs[scene.rearr_obj_name].h_mat,
+                    self.scene_mngr.init_objects[
+                        self.scene_mngr.attached_obj_name
+                    ].color,
+                )
+            else:
+                success_joint_path = False
+        else:
+            success_joint_path = False
+
+        if not success_joint_path:
+            return result_all_joint_path
+
+        if default_joint_path:
+            self.cost += self.rrt_planner.goal_node_cost
+            result_joint_path.update({self.move_data.MOVE_pre_grasp: pre_grasp_joint_path})
+            result_joint_path.update({self.move_data.MOVE_grasp: grasp_joint_path})
+            result_joint_path.update({self.move_data.MOVE_post_grasp: post_grasp_joint_path})
+            result_joint_path.update({self.move_data.MOVE_default_grasp: default_joint_path})
+            result_all_joint_path.append(result_joint_path)
+            return result_all_joint_path
+        
     def get_possible_transitions(self, scene: Scene = None, action: dict = {}):
         """
         working on table top_scene
@@ -316,7 +483,8 @@ class RearrangementAction(ActivityBase):
             for rearr_pose, obj_pose_transformed in action[self.info.REARR_POSES]:
                 next_scene = deepcopy(scene)
                 next_scene.rearr_poses = deepcopy(rearr_pose)
-
+                next_scene.rearr_obj_default_pose = deepcopy(scene.objs[name].h_mat)
+                next_scene.rearr_obj_name = name
                 next_scene.robot.gripper.release_pose = next_scene.rearr_poses[
                     self.move_data.MOVE_release
                 ]
@@ -356,6 +524,7 @@ class RearrangementAction(ActivityBase):
             for rearr_pose in action[self.info.REARR_POSES]:
                 next_scene = deepcopy(scene)
                 next_scene.rearr_poses = deepcopy(rearr_pose)
+                next_scene.rearr_obj_default_pose = deepcopy(scene.objs[name].h_mat)
                 next_scene.rearr_obj_name = name
                 pose = next_scene.rearr_poses[place_obj_name]
 
