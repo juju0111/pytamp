@@ -106,6 +106,30 @@ class ActivityBase(metaclass=ABCMeta):
             return True
         return False
 
+    def get_pre_grasp_pose(self, grasp_pose):
+        pre_grasp_pose = np.eye(4, dtype=np.float32)
+        pre_grasp_pose[:3, :3] = grasp_pose[:3, :3]
+        pre_grasp_pose[:3, 3] = grasp_pose[:3, 3] - self.retreat_distance * grasp_pose[:3, 2]
+        return pre_grasp_pose
+
+    def get_post_grasp_pose(self, grasp_pose):
+        post_grasp_pose = np.eye(4, dtype=np.float32)
+        post_grasp_pose[:3, :3] = grasp_pose[:3, :3]
+        post_grasp_pose[:3, 3] = grasp_pose[:3, 3] + np.array([0, 0, self.retreat_distance])
+        return post_grasp_pose
+
+    def get_all_grasps_from_grasps(self, grasps):
+        if len(grasps) > 5:
+            random_list = np.random.choice(len(grasps), 5, replace=False)
+            grasps = grasps[random_list]
+
+        for grasp in grasps:
+            grasp_pose = {}
+            grasp_pose[self.move_data.MOVE_grasp] = grasp
+            grasp_pose[self.move_data.MOVE_pre_grasp] = self.get_pre_grasp_pose(grasp)
+            grasp_pose[self.move_data.MOVE_post_grasp] = self.get_post_grasp_pose(grasp)
+            yield grasp_pose
+
     def deepcopy_scene(self, scene=None):
         if scene is None:
             scene = self.scene_mngr.scene

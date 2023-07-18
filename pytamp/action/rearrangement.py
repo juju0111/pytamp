@@ -114,6 +114,43 @@ class RearrangementAction(ActivityBase):
 
         return action
 
+    # for level wise - 1.5 (Consider gripper collision, when using contact_graspnet)
+    def get_all_grasp_poses_not_collision(self, grasp_poses):
+        if not grasp_poses:
+            raise ValueError("Not found grasp poses!")
+
+        for all_grasp_pose in grasp_poses:
+            # if self.scene_mngr.scene.bench_num == 2:
+            # self.scene_mngr.close_gripper(0.015)
+            for name, pose in all_grasp_pose.items():
+                is_collision = False
+
+                # Already checked collision at grasp_pose
+                # if name == self.move_data.MOVE_grasp:
+                #     self.scene_mngr.set_gripper_pose(pose)
+                #     for name in self.scene_mngr.scene.objs:
+                #         self.scene_mngr.obj_collision_mngr.set_transform(
+                #             name, self.scene_mngr.scene.objs[name].h_mat
+                #         )
+
+                # if self._collide(is_only_gripper=True):
+                #     is_collision = True
+                #     break
+
+                if name == self.move_data.MOVE_pre_grasp:
+                    self.scene_mngr.set_gripper_pose(pose)
+                    if self._collide(is_only_gripper=True):
+                        is_collision = True
+                        break
+                if name == self.move_data.MOVE_post_grasp:
+                    self.scene_mngr.set_gripper_pose(pose)
+                    if self._collide(is_only_gripper=True):
+                        is_collision = True
+                        break
+            # self.scene_mngr.open_gripper(0.015)
+            if not is_collision:
+                yield all_grasp_pose
+
     def get_goal_location(self, obj_name: str) -> dict:
         """
         A function that gets a known position from a given goal scene
@@ -278,9 +315,11 @@ class RearrangementAction(ActivityBase):
         if self.use_pick_action:
             for rearr_pose, obj_pose_transformed in action[self.info.REARR_POSES]:
                 next_scene = deepcopy(scene)
-                next_scene.rearr_poses = rearr_pose
+                next_scene.rearr_poses = deepcopy(rearr_pose)
 
-                next_scene.robot.gripper.release_pose = rearr_pose[self.move_data.MOVE_release]
+                next_scene.robot.gripper.release_pose = next_scene.rearr_poses[
+                    self.move_data.MOVE_release
+                ]
 
                 default_thetas = self.scene_mngr.scene.robot.init_qpos
                 default_pose = self.scene_mngr.scene.robot.forward_kin(default_thetas)[
@@ -316,9 +355,9 @@ class RearrangementAction(ActivityBase):
         else:
             for rearr_pose in action[self.info.REARR_POSES]:
                 next_scene = deepcopy(scene)
-                next_scene.rearr_poses = rearr_pose
+                next_scene.rearr_poses = deepcopy(rearr_pose)
                 next_scene.rearr_obj_name = name
-                pose = rearr_pose[place_obj_name]
+                pose = next_scene.rearr_poses[place_obj_name]
 
                 next_scene.transform_from_cur_to_goal = c_T_w.dot(pose)
 

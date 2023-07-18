@@ -11,6 +11,7 @@ class NodeData:
     TYPE = "type"
     JOINTS = "joints"
     LEVEL1 = "level1"
+    LEVEL1_5 = "level1_5"
     LEVEL2 = "level2"
     SUCCESS = "success"
     COST = "cost"

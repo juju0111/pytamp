@@ -11,6 +11,7 @@ from pytamp.utils.point_cloud_utils import get_mixed_scene
 from pytamp.utils.point_cloud_utils import get_obj_point_clouds
 from pytamp.utils.point_cloud_utils import get_support_space_point_cloud
 
+
 class Grasp_Using_Contact_GraspNet:
     def __init__(self, action):
         tf.disable_eager_execution()
@@ -28,6 +29,7 @@ class Grasp_Using_Contact_GraspNet:
         sys.path.append(os.path.join(home_path, "contact_graspnet/contact_graspnet"))
 
         import config_utils
+
         # from contact_graspnet import contact_graspnet
         from contact_grasp_estimator import GraspEstimator
         from visualization_utils import visualize_grasps
@@ -212,103 +214,133 @@ class Grasp_Using_Contact_GraspNet:
         return cam_pc, pc_segments
 
     def change_grasp_to_world_coord(self, pred_grasps_cam, obj_to_manipulate):
-
         def collision_check_using_contact_graspnet(pred_grasps):
             collision_free_grasps = []
             for grasps in pred_grasps:
                 self.action.scene_mngr.set_gripper_pose(grasps)
                 if not self.action._collide(is_only_gripper=True):
                     collision_free_grasps.append(grasps)
-            
+
             return np.array(collision_free_grasps)
 
         pred_grasps_world = {}
         pred_grasps_world_augment = {}
         pred_grasps_cam_augment = {}
-        collision_free_grasps = [] 
-        # Z축으로 90도 돌려야함. 
-        z_90_matrix = np.array([[0,-1,0,0],
-                                [1,0,0,0],
-                                [0,0,1,0],
-                                [0,0,0,1]])
-        
+        collision_free_grasps = []
+        # Z축으로 90도 돌려야함.
+        z_90_matrix = np.array([[0, -1, 0, 0], [1, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
-        pred_grasps_cam_augment[obj_to_manipulate] = pred_grasps_cam[obj_to_manipulate] @ z_90_matrix
-        pred_grasps_world[obj_to_manipulate] = self.w_T_cam @ pred_grasps_cam[obj_to_manipulate]
+        pred_grasps_cam_augment[obj_to_manipulate] = (
+            pred_grasps_cam[obj_to_manipulate] @ z_90_matrix
+        )
+        pred_grasps_world[obj_to_manipulate] = (
+            self.w_T_cam @ pred_grasps_cam_augment[obj_to_manipulate]
+        )
         print("Generated Grasp in world coord :", pred_grasps_world[obj_to_manipulate].shape)
 
-        collision_free_grasps = collision_check_using_contact_graspnet(pred_grasps_world[obj_to_manipulate])
+        collision_free_grasps = collision_check_using_contact_graspnet(
+            pred_grasps_world[obj_to_manipulate]
+        )
         print("Collision free grasps step 1 : ", collision_free_grasps.shape)
-        
+
         if not len(collision_free_grasps):
-            pred_grasps_world_augment[obj_to_manipulate] = self.w_T_cam @ pred_grasps_cam_augment[obj_to_manipulate]
-            print("Augment 1 _z axis 90' rotation ", pred_grasps_world_augment[obj_to_manipulate].shape, pred_grasps_world[obj_to_manipulate].shape)
-            
-            collision_free_grasps = collision_check_using_contact_graspnet(pred_grasps_world_augment[obj_to_manipulate])
+            pred_grasps_world_augment[obj_to_manipulate] = (
+                self.w_T_cam @ pred_grasps_cam[obj_to_manipulate]
+            )
+            print(
+                "Augment 1 _z axis 90' rotation ",
+                pred_grasps_world_augment[obj_to_manipulate].shape,
+                pred_grasps_world[obj_to_manipulate].shape,
+            )
+
+            collision_free_grasps = collision_check_using_contact_graspnet(
+                pred_grasps_world_augment[obj_to_manipulate]
+            )
             print("Collision free grasps step 2 : ", collision_free_grasps.shape)
-        
+
         augmented_grasps = []
         if not len(collision_free_grasps):
-            pred_grasps_world_augment[obj_to_manipulate] = np.vstack([pred_grasps_world_augment[obj_to_manipulate], pred_grasps_world[obj_to_manipulate]])
+            pred_grasps_world_augment[obj_to_manipulate] = np.vstack(
+                [pred_grasps_world_augment[obj_to_manipulate], pred_grasps_world[obj_to_manipulate]]
+            )
             for grasps in pred_grasps_world_augment[obj_to_manipulate]:
                 self.action.scene_mngr.set_gripper_pose(grasps)
                 tcp_pose = self.action.scene_mngr.scene.robot.gripper.get_gripper_tcp_pose()
 
                 for tcp_pose_ in get_heuristic_eef_pose(tcp_pose):
-                    eef_pose_ = self.action.scene_mngr.scene.robot.gripper.compute_eef_pose_from_tcp_pose(tcp_pose_)
+                    eef_pose_ = (
+                        self.action.scene_mngr.scene.robot.gripper.compute_eef_pose_from_tcp_pose(
+                            tcp_pose_
+                        )
+                    )
                     self.action.scene_mngr.set_gripper_pose(eef_pose_)
                     augmented_grasps.append(eef_pose_)
-        
+
         if augmented_grasps:
             augmented_grasps = np.array(augmented_grasps)
             print("Augment 2 y axis rotation from -pi/3 ~ pi/3 : ", augmented_grasps.shape)
             pred_grasps_world_augment[obj_to_manipulate] = augmented_grasps
-            
-            collision_free_grasps = collision_check_using_contact_graspnet(pred_grasps_world_augment[obj_to_manipulate])
+
+            collision_free_grasps = collision_check_using_contact_graspnet(
+                pred_grasps_world_augment[obj_to_manipulate]
+            )
             print("Collision free grasps step 3 : ", collision_free_grasps.shape)
 
         return collision_free_grasps
-    
+
     def remove_mixed_scene(self):
         self.action.remove_mixed_scene()
 
-    
-    def get_grasp(self, init_scene, next_node=None, current_node=None,):
-        obj_to_manipulate = current_node['action']['rearr_obj_name']
+    def get_grasp(
+        self,
+        init_scene,
+        next_node=None,
+        current_node=None,
+    ):
+        obj_to_manipulate = current_node["action"]["rearr_obj_name"]
 
         if next_node != None:
             self.action.get_mixed_scene_on_current(
-                            next_scene=next_node['state'],\
-                            current_scene=current_node['state'],\
-                            obj_to_manipulate=obj_to_manipulate
-                            )
+                next_scene=next_node["state"],
+                current_scene=current_node["state"],
+                obj_to_manipulate=obj_to_manipulate,
+            )
             pc, pc_segments, pc_color, count = get_obj_point_clouds(
-                            init_scene,
-                            self.action.scene_mngr.scene,
-                            obj_to_manipulate
-                            )
+                init_scene, self.action.scene_mngr.scene, obj_to_manipulate
+            )
         else:
             pc, pc_segments, pc_color, count = get_obj_point_clouds(
-                init_scene,
-                current_node['state'],
-                obj_to_manipulate
-                )
-        table_point_cloud, table_color =  get_support_space_point_cloud(init_scene, current_node['state'])
+                init_scene, current_node["state"], obj_to_manipulate
+            )
+        table_point_cloud, table_color = get_support_space_point_cloud(
+            init_scene, current_node["state"]
+        )
 
         # in pc_utils
         all_pc = np.vstack([pc, table_point_cloud])
         all_color = np.vstack([pc_color, table_color])
 
-        cam_pc, pc_segments = self.get_pc_from_camera_point_of_view(all_pc, pc_segments, obj_to_manipulate)
-        
-        pc_region_ = self.get_region_to_manipulate(cam_pc[:,:3], pc_segments, min_size=0.4, obj_name=obj_to_manipulate)
+        cam_pc, pc_segments = self.get_pc_from_camera_point_of_view(
+            all_pc, pc_segments, obj_to_manipulate
+        )
 
+        pc_region_ = self.get_region_to_manipulate(
+            cam_pc[:, :3], pc_segments, min_size=0.4, obj_name=obj_to_manipulate
+        )
 
         pred_grasps_cam, s_, c_, g_o_ = {}, {}, {}, {}
 
-        pred_grasps_cam, s_, c_, g_o_ = self.generate_grasp(pc_region_, pc_segments[obj_to_manipulate], obj_to_manipulate)
+        pred_grasps_cam, s_, c_, g_o_ = self.generate_grasp(
+            pc_region_, pc_segments[obj_to_manipulate], obj_to_manipulate
+        )
         collision_free_grasps = self.change_grasp_to_world_coord(pred_grasps_cam, obj_to_manipulate)
 
-        self.action.remove_mixed_scene()
-        
+        # self.action.remove_mixed_scene()
+
         return collision_free_grasps
+
+    def get_all_grasps(self, collision_free_grasps):
+        grasp_poses = list(self.action.get_all_grasps_from_grasps(collision_free_grasps))
+        grasp_poses_not_collision = list(self.action.get_all_grasp_poses_not_collision(grasp_poses))
+        self.action.remove_mixed_scene()
+        return grasp_poses_not_collision

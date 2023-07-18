@@ -1,6 +1,7 @@
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
+import random
 from copy import deepcopy
 from networkx.drawing.nx_agraph import graphviz_layout
 
@@ -18,6 +19,7 @@ from pykin.utils import plot_utils as p_utils
 from pykin.utils.kin_utils import ShellColors as sc
 from pytamp.utils.contact_graspnet_utils import Grasp_Using_Contact_GraspNet
 
+
 class MCTS_rearrangement:
     def __init__(
         self,
@@ -30,12 +32,14 @@ class MCTS_rearrangement:
         gamma: float = 1,
         debug_mode=False,
         use_pick_action=False,
+        consider_next_scene=True,
     ):
         self.node_data = NodeData
         self.scene_mngr = scene_mngr
         self.scene_mngr.is_debug_mode = False
         self.state = scene_mngr.scene
         self.use_pick_action = use_pick_action
+        self.consider_next_scene = consider_next_scene
         self.prev_rearr_obj_num = 0
         self.next_rearr_obj_num = 0
         bench_num = self.scene_mngr.scene.bench_num
@@ -143,7 +147,8 @@ class MCTS_rearrangement:
         self.optimal_nodes = []
         self.only_optimize_1 = False
         self.has_aleardy_level_1_optimal_nodes = False
-        self.grasp_generator = Grasp_Using_Contact_GraspNet(self.rearr_action)
+        if not use_pick_action:
+            self.grasp_generator = Grasp_Using_Contact_GraspNet(self.rearr_action)
 
     def _create_tree(self, state: Scene):
         tree = nx.DiGraph()
@@ -165,6 +170,7 @@ class MCTS_rearrangement:
                         NodeData.JOINTS: [],
                         NodeData.LEVEL1: False,
                         NodeData.LEVEL2: False,
+                        NodeData.LEVEL1_5: False,
                         NodeData.SUCCESS: False,
                         NodeData.COST: 0,
                         NodeData.TEST: (),
@@ -221,8 +227,18 @@ class MCTS_rearrangement:
                         self.values_for_level_2.append(
                             self.get_max_value_level_2(success_level_1_sub_nodes)
                         )
-                    
-                    
+
+                    # TODO
+                    else:
+                        self._level_wise_between_1_and_2_optimize(
+                            success_level_1_sub_nodes, self.consider_next_scene
+                        )
+                        self._level_wise_2_optimize(success_level_1_sub_nodes)
+                        self._update_success_level_1_and_2(success_level_1_sub_nodes)
+                        self.values_for_level_2.append(
+                            self.get_max_value_level_2(success_level_1_sub_nodes)
+                        )
+
                     self.history_level_1_optimal_nodes.append(success_level_1_sub_nodes)
                     self.history_level_1_values.append(
                         self.tree.nodes[0][NodeData.VALUE_HISTORY][-1]
@@ -232,7 +248,6 @@ class MCTS_rearrangement:
                         value=self.tree.nodes[0][NodeData.VALUE_HISTORY][-1],
                     )
                     print("Add level_1_node!")
-
 
                 else:
                     self.values_for_level_2.append(self.level2_max_value)
@@ -353,6 +368,42 @@ class MCTS_rearrangement:
 
         return value
 
+    def _level_wise_between_1_and_2_optimize(self, sub_optimal_nodes, use_next_scene=True) -> None:
+        node_length = int(len(sub_optimal_nodes) / 2)
+        for i in range(node_length):
+            parent_node = self.tree.nodes[sub_optimal_nodes[2 * i]]
+            current_node = self.tree.nodes[sub_optimal_nodes[2 * i + 1]]
+            next_node = self.tree.nodes[sub_optimal_nodes[2 * i + 2]]
+            obj_to_manipulate = current_node["action"]["rearr_obj_name"]
+
+            print(f"{sc.COLOR_BROWN}{obj_to_manipulate}{sc.ENDC}")
+            for _ in range(2):
+                if use_next_scene:
+                    grasps = self.grasp_generator.get_grasp(
+                        init_scene=self.init_scene,
+                        next_node=next_node,
+                        current_node=current_node,
+                    )
+                else:
+                    grasps = self.grasp_generator.get_grasp(
+                        init_scene=self.init_scene,
+                        current_node=current_node,
+                    )
+
+                if len(grasps) >= 1:
+                    grasp_poses_not_collision = self.grasp_generator.get_all_grasps(grasps)
+                    current_node[self.rearr_action.info.GRASP_POSES] = grasp_poses_not_collision
+                    g_ = random.sample(grasp_poses_not_collision, 1)
+                    next_node["action"].update(deepcopy(g_[0]))
+                    parent_node[NodeData.LEVEL1_5] = True
+                    current_node[NodeData.LEVEL1_5] = True
+                    next_node[NodeData.LEVEL1_5] = True
+                    break
+                else:
+                    print(
+                        f"{sc.COLOR_RED}failed to generate grasp pose for {obj_to_manipulate}{sc.ENDC}"
+                    )
+
     def _select_logical_action_node_rearr(
         self,
         cur_state_node: int,
@@ -456,6 +507,7 @@ class MCTS_rearrangement:
                                 NodeData.JOINTS: [],
                                 NodeData.LEVEL1: False,
                                 NodeData.LEVEL2: False,
+                                NodeData.LEVEL1_5: False,
                                 NodeData.SUCCESS: False,
                                 NodeData.COST: 0,
                                 NodeData.TEST: (),
@@ -489,6 +541,7 @@ class MCTS_rearrangement:
                                     NodeData.JOINTS: [],
                                     NodeData.LEVEL1: False,
                                     NodeData.LEVEL2: False,
+                                    NodeData.LEVEL1_5: False,
                                     NodeData.SUCCESS: False,
                                     NodeData.COST: 0,
                                     NodeData.TEST: (),
@@ -602,6 +655,7 @@ class MCTS_rearrangement:
                             NodeData.JOINTS: [],
                             NodeData.LEVEL1: False,
                             NodeData.LEVEL2: False,
+                            NodeData.LEVEL1_5: False,
                             NodeData.SUCCESS: False,
                             NodeData.COST: 0,
                             NodeData.TEST: (),
@@ -824,7 +878,7 @@ class MCTS_rearrangement:
         #             reward = 1
 
         return reward
-    
+
     def _level_wise_hidden_step_optimize(self, sub_optimal_nodes):
         if not sub_optimal_nodes:
             print(f"{sc.FAIL}Not found any sub optimal nodes.{sc.ENDC}")
@@ -836,14 +890,14 @@ class MCTS_rearrangement:
                     f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
                 )
                 return
-            
+
         for infeasible_node in self.infeasible_sub_nodes:
             if set(sub_optimal_nodes).issubset(infeasible_node):
                 print(
                     f"{sc.FAIL}This optimal subnodes({infeasible_node}) is infeasible subnodes.{sc.ENDC}"
                 )
                 return
-        
+
         self.show_logical_actions(sub_optimal_nodes)
 
         if self.debug_mode:
@@ -851,8 +905,8 @@ class MCTS_rearrangement:
             self.visualize_tree("Success nodes", subtree)
 
         # TODO
-        # using graspgenenrator pick action에서 어떻게 grasp추가하는지 보고 추가시키면 됨!! 
-        # 쉽다. 
+        # using graspgenenrator pick action에서 어떻게 grasp추가하는지 보고 추가시키면 됨!!
+        # 쉽다.
 
     def _level_wise_2_optimize(self, sub_optimal_nodes):
         if not sub_optimal_nodes:
@@ -864,6 +918,15 @@ class MCTS_rearrangement:
                 print(
                     f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
                 )
+                return
+
+        # # When use Contact_graspnet, you have to check Level 1.5
+        if not self.use_pick_action:
+            level_1_5 = [
+                True for n in sub_optimal_nodes if self.tree.nodes[n][NodeData.LEVEL1_5] is True
+            ]
+            if not all(level_1_5):
+                print(f"{sc.FAIL}Failed at Level 1.5{sc.ENDC}")
                 return
 
         for infeasible_node in self.infeasible_sub_nodes:
@@ -894,7 +957,7 @@ class MCTS_rearrangement:
             success_place = False
             action = self.tree.nodes[sub_optimal_node].get(NodeData.ACTION)
             if action:
-                if list(action.keys())[0] == "grasp":
+                if "grasp" in list(action.keys()):
                     pick_scene: Scene = self.tree.nodes[sub_optimal_node]["state"]
                     print(f"{sc.COLOR_YELLOW}pick {pick_scene.pick_obj_name}{sc.ENDC}")
 
@@ -1118,24 +1181,24 @@ class MCTS_rearrangement:
                     )
             return self.level2_max_value
 
-    def get_grasp_at_current_scene(self, nodes:list, idx:int, consider_next_scene:bool = True):
-        current_node = self.tree.nodes[nodes[2*idx+1]]
-        next_node = self.tree.nodes[nodes[2*(idx+1)]]
+    def get_grasp_at_current_scene(self, nodes: list, idx: int, consider_next_scene: bool = True):
+        current_node = self.tree.nodes[nodes[2 * idx + 1]]
+        next_node = self.tree.nodes[nodes[2 * (idx + 1)]]
 
         if consider_next_scene:
             grasp_poses = self.grasp_generator.get_grasp(
-                init_scene = self.init_scene,
-                next_node = next_node,
-                current_node = current_node,
-                )
+                init_scene=self.init_scene,
+                next_node=next_node,
+                current_node=current_node,
+            )
         else:
             grasp_poses = self.grasp_generator.get_grasp(
-                init_scene = self.init_scene,
-                next_node = None,
-                current_node = current_node,
-                )
+                init_scene=self.init_scene,
+                next_node=None,
+                current_node=current_node,
+            )
         return grasp_poses
-    
+
     def get_all_joint_path(self, nodes):
         pnp_all_joint_path = []
         place_all_object_poses = []
