@@ -657,7 +657,7 @@ class SceneManager:
                 self.render.trimesh_scene.set_camera(
                     angles=(1.2, 0, 0.6), distance=2, center=(0.5, 0, 1)
                 )
-                img = self.render.get_scene_img()
+                img = self.render.get_scene_img(True)
                 # print(i ,"render")
                 self.render.trimesh_scene = None
                 return img
@@ -670,7 +670,7 @@ class SceneManager:
         # 동영상 만들기
         fig_trimesh = plt.figure()
         ax_trimesh = plt.gca()
-        im = ax_trimesh.imshow(self.render.get_scene_img(), cmap="gray")
+        im = ax_trimesh.imshow(self.render.get_scene_img(True), cmap="gray")
         plt.axis("off")
 
         # return images, im
@@ -694,15 +694,25 @@ class SceneManager:
         if is_save:
             import os
 
-            print("PWD : ", os.getcwd())
+            print("PWD : ", "~/pytamp/")
+            # current_directory = os.path.dirname(os.path.abspath(__file__))
+            # print(current_directory)
             if gif:
                 writergif = animation.PillowWriter(fps=30)
                 video_name = video_name + ".gif"
-                anim.save(video_name, writergif)
+                anim.save(
+                    "/home/juju/pytamp/examples/doosan/action/rearrangement1/movie_dir/"
+                    + video_name,
+                    writergif,
+                )
             else:
                 writervideo = animation.FFMpegWriter(fps=30)
                 video_name = video_name + ".mp4"
-                anim.save(video_name, writervideo)
+                anim.save(
+                    "/home/juju/pytamp/examples/doosan/action/rearrangement1/movie_dir/"
+                    + video_name,
+                    writervideo,
+                )
             print("Save finished..")
         else:
             self.show()

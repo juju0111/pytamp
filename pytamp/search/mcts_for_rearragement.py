@@ -394,18 +394,25 @@ class MCTS_rearrangement:
                 if len(grasps) >= 1:
                     # update next node's grasp_pose
                     grasp_poses_not_collision = self.grasp_generator.get_all_grasps(grasps)
+                    if len(grasp_poses_not_collision) < 1:
+                        current_node[NodeData.LEVEL1_5] = False
+                        next_node[NodeData.LEVEL1_5] = False
+                        break
                     current_node[self.rearr_action.info.GRASP_POSES] = grasp_poses_not_collision
                     g_ = random.sample(grasp_poses_not_collision, 1)
                     next_node["action"].update(deepcopy(g_[0]))
 
-                    # update next_node's release_pose 
+                    # update next_node's release_pose
                     transform_bet_gripper_n_obj = m_utils.get_relative_transform(
-                        next_node["action"][self.rearr_action.move_data.MOVE_grasp], current_node['state'].objs[obj_to_manipulate].h_mat
+                        next_node["action"][self.rearr_action.move_data.MOVE_grasp],
+                        current_node["state"].objs[obj_to_manipulate].h_mat,
                     )
-                    next_node['state'].robot.gripper.transform_bet_gripper_n_obj = transform_bet_gripper_n_obj
+                    next_node[
+                        "state"
+                    ].robot.gripper.transform_bet_gripper_n_obj = transform_bet_gripper_n_obj
                     eef_pose = m_utils.get_absolute_transform(
                         transform_bet_gripper_n_obj,
-                        next_node['state'].objs[obj_to_manipulate].h_mat,
+                        next_node["state"].objs[obj_to_manipulate].h_mat,
                     )
                     release_poses = self.rearr_action.get_all_release_poses(eef_pose)
                     next_node["action"].update(release_poses)
@@ -907,7 +914,7 @@ class MCTS_rearrangement:
                     f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
                 )
                 return
-            
+
         # # When use Contact_graspnet, you have to check Level 1.5
         level_1_5 = [
             True for n in sub_optimal_nodes if self.tree.nodes[n][NodeData.LEVEL1_5] is True
@@ -915,7 +922,7 @@ class MCTS_rearrangement:
         if not all(level_1_5):
             print(f"{sc.FAIL}Failed at Level 1.5{sc.ENDC}")
             return
-        
+
         for infeasible_node in self.infeasible_sub_nodes:
             if set(sub_optimal_nodes).issubset(infeasible_node):
                 print(
@@ -942,24 +949,38 @@ class MCTS_rearrangement:
             if node_type == "action":
                 continue
             success_place = False
-            action:dict = self.tree.nodes[sub_optimal_node].get(NodeData.ACTION)
+            action: dict = self.tree.nodes[sub_optimal_node].get(NodeData.ACTION)
 
             if action:
-                # next_scene 
+                # next_scene
                 pick_scene: Scene = self.tree.nodes[sub_optimal_node]["state"]
                 print(f"{sc.COLOR_YELLOW}pick {pick_scene.rearr_obj_name}{sc.ENDC}")
 
                 if not init_thetas:
                     init_theta = self.rearr_action.scene_mngr.scene.robot.init_qpos
 
-                grasp_poses = {self.rearr_action.move_data.MOVE_grasp : action[self.rearr_action.move_data.MOVE_grasp],
-                                self.rearr_action.move_data.MOVE_pre_grasp : action[self.rearr_action.move_data.MOVE_pre_grasp],
-                                self.rearr_action.move_data.MOVE_post_grasp : action[self.rearr_action.move_data.MOVE_post_grasp],
-                                }
-                release_poses = {self.rearr_action.move_data.MOVE_release : action[self.rearr_action.move_data.MOVE_release],
-                                self.rearr_action.move_data.MOVE_pre_release : action[self.rearr_action.move_data.MOVE_pre_release],
-                                self.rearr_action.move_data.MOVE_post_release : action[self.rearr_action.move_data.MOVE_post_release],
-                                }
+                grasp_poses = {
+                    self.rearr_action.move_data.MOVE_grasp: action[
+                        self.rearr_action.move_data.MOVE_grasp
+                    ],
+                    self.rearr_action.move_data.MOVE_pre_grasp: action[
+                        self.rearr_action.move_data.MOVE_pre_grasp
+                    ],
+                    self.rearr_action.move_data.MOVE_post_grasp: action[
+                        self.rearr_action.move_data.MOVE_post_grasp
+                    ],
+                }
+                release_poses = {
+                    self.rearr_action.move_data.MOVE_release: action[
+                        self.rearr_action.move_data.MOVE_release
+                    ],
+                    self.rearr_action.move_data.MOVE_pre_release: action[
+                        self.rearr_action.move_data.MOVE_pre_release
+                    ],
+                    self.rearr_action.move_data.MOVE_post_release: action[
+                        self.rearr_action.move_data.MOVE_post_release
+                    ],
+                }
                 # pick level 2
                 pick_joint_path = self.rearr_action.get_possible_joint_path_level_2_for_grasp(
                     scene=pick_scene,
@@ -981,8 +1002,8 @@ class MCTS_rearrangement:
                     self.infeasible_sub_nodes.append(sub_optimal_nodes)
                     print(self.infeasible_sub_nodes)
                     break
-                
-                # place level 2 
+
+                # place level 2
                 place_joint_path = self.rearr_action.get_possible_joint_path_level_2_for_rearr(
                     scene=pick_scene,
                     release_poses=release_poses,
@@ -997,17 +1018,18 @@ class MCTS_rearrangement:
                     current_cost += round(self.weird_division(1, self.rearr_action.cost) / 10, 6)
                     if current_cost > self.tree.nodes[sub_optimal_node][NodeData.COST]:
                         self.tree.nodes[sub_optimal_node][NodeData.COST] = current_cost
-                        self.tree.nodes[sub_optimal_node][NodeData.JOINTS][-1].update(\
-                            place_joint_path[-1])
-                            
+                        self.tree.nodes[sub_optimal_node][NodeData.JOINTS][-1].update(
+                            place_joint_path[-1]
+                        )
+
                     parent_node = [node for node in self.tree.predecessors(sub_optimal_node)][0]
                     self.tree.nodes[sub_optimal_node][NodeData.LEVEL2] = True
                     self.tree.nodes[parent_node][NodeData.LEVEL2] = True
                     self.tree.nodes[0][NodeData.LEVEL2] = True
-                    
+
                     if success_pick and success_place:
                         self.tree.nodes[sub_optimal_node][NodeData.TEST] = (
-                            pick_scene.robot.gripper.attached_obj_name,
+                            pick_scene.rearr_obj_name,
                             pick_scene.objs[pick_scene.rearr_obj_name].h_mat,
                         )
                         print("Success pnp")
@@ -1020,7 +1042,8 @@ class MCTS_rearrangement:
                     self.infeasible_sub_nodes.append(sub_optimal_nodes)
                     print(self.infeasible_sub_nodes)
                     break
-        
+        if success_pick and success_place:
+            self.level_wise_2_success = True
 
     def _level_wise_2_optimize(self, sub_optimal_nodes):
         if not sub_optimal_nodes:
@@ -1320,11 +1343,17 @@ class MCTS_rearrangement:
                 continue
             action = self.tree.nodes[node].get(NodeData.ACTION)
             if action:
-                if list(action.keys())[0] == "grasp":
-                    pick_joint_path = self.tree.nodes[node][NodeData.JOINTS]
+                if self.use_pick_action:
+                    if list(action.keys())[0] == "grasp":
+                        pick_joint_path = self.tree.nodes[node][NodeData.JOINTS]
+                    else:
+                        place_joint_path = self.tree.nodes[node][NodeData.JOINTS]
+                        pnp_path += pick_joint_path + place_joint_path
+                        pick_object, place_obj_pose = self.tree.nodes[node][NodeData.TEST]
+                        pick_objects.append(pick_object)
+                        place_object_poses.append(place_obj_pose)
                 else:
-                    place_joint_path = self.tree.nodes[node][NodeData.JOINTS]
-                    pnp_path += pick_joint_path + place_joint_path
+                    pnp_path += self.tree.nodes[node][NodeData.JOINTS]
                     pick_object, place_obj_pose = self.tree.nodes[node][NodeData.TEST]
                     pick_objects.append(pick_object)
                     place_object_poses.append(place_obj_pose)
