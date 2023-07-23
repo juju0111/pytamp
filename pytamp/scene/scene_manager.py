@@ -693,24 +693,20 @@ class SceneManager:
 
         if is_save:
             import os
-
-            print("PWD : ", "~/pytamp/")
-            # current_directory = os.path.dirname(os.path.abspath(__file__))
-            # print(current_directory)
+            os.chdir("/home/juju/pytamp/examples/doosan/action/rearrangement1/movie_dir")
+            print("PWD : ", os.getcwd())
             if gif:
                 writergif = animation.PillowWriter(fps=30)
                 video_name = video_name + ".gif"
                 anim.save(
-                    "/home/juju/pytamp/examples/doosan/action/rearrangement1/movie_dir/"
-                    + video_name,
+                    video_name,
                     writergif,
                 )
             else:
                 writervideo = animation.FFMpegWriter(fps=30)
                 video_name = video_name + ".mp4"
                 anim.save(
-                    "/home/juju/pytamp/examples/doosan/action/rearrangement1/movie_dir/"
-                    + video_name,
+                    video_name,
                     writervideo,
                 )
             print("Save finished..")

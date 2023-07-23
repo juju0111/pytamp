@@ -145,6 +145,8 @@ class MCTS_rearrangement:
         self.history_level_1_optimal_nodes = []
         self.history_level_1_values = []
         self.history_level_1_dict = {}
+        self.history_level_2_dict = {}
+
         self.optimal_nodes = []
         self.only_optimize_1 = False
         self.has_aleardy_level_1_optimal_nodes = False
@@ -249,6 +251,17 @@ class MCTS_rearrangement:
                         value=self.tree.nodes[0][NodeData.VALUE_HISTORY][-1],
                     )
                     print("Add level_1_node!")
+
+                    level_2 = True 
+                    for i in success_level_1_sub_nodes:
+                        if not self.tree.nodes[i]['level2']:
+                            level_2 = False
+                    if level_2:
+                        self.history_level_2_dict[len(self.history_level_2_dict)] = dict(
+                            nodes=success_level_1_sub_nodes,
+                            value=self.values_for_level_2[-1],
+                        )
+                        print("Add level_2_node!")
 
                 else:
                     self.values_for_level_2.append(self.level2_max_value)

@@ -79,9 +79,9 @@ class Rearrange1(Benchmark):
                     0,
                     np.pi / 16.0,
                     0.00,
-                    -np.pi / 2.0 - np.pi / 3.0,
+                    -np.pi / 2.0 - np.pi / 4.0,
                     0.00,
-                    np.pi - 0.2,
+                    np.pi - np.pi/6.0,
                     -np.pi / 4,
                 ]
             )
