@@ -74,17 +74,19 @@ class Rearrange1(Benchmark):
         )
         if self.robot_name == "panda":
             self.robot.setup_link_name("panda_link_0", "right_hand")
-            self.robot.init_qpos = np.array(
-                [
-                    0,
-                    np.pi / 16.0,
-                    0.00,
-                    -np.pi / 2.0 - np.pi / 4.0,
-                    0.00,
-                    np.pi - np.pi/6.0,
-                    -np.pi / 4,
-                ]
-            )
+            # self.robot.init_qpos = np.array(
+            #     [
+            #         0,
+            #         np.pi / 16.0,
+            #         0.00,
+            #         -np.pi / 2.0 - np.pi / 4.0,
+            #         0.00,
+            #         np.pi - np.pi/6.0,
+            #         -np.pi / 4,
+            #     ]
+            # )
+            self.robot.init_qpos = np.array([ 6.33525628e-13, -5.38478180e-01,  5.44820130e-12, -2.69413060e+00,
+                                    2.15158886e-12,  2.22111507e+00, -7.85398163e-01])
         if self.robot_name == "doosan":
             self.robot.setup_link_name("base_0", "right_hand")
             self.robot.init_qpos = np.array([0, 0, np.pi / 2, 0, np.pi / 2, 0])
@@ -103,10 +105,12 @@ class Rearrange1(Benchmark):
 
         # object_pose transformation according to Table Pose
         for o_name, o_pose in self.init_scene._poses.items():
+            print(o_name ," o_pose : ", o_pose)
             self.init_scene._poses[o_name] = self.table_pose.h_mat @ o_pose
 
         for o_name, o_pose in self.param["goal_scene"].items():
             self.param["goal_scene"][o_name] = self.table_pose.h_mat @ o_pose
+            print(o_name ," o_pose : ", o_pose)
 
         # assign color
         self.init_scene.colorize()
@@ -182,7 +186,7 @@ def make_scene():
     args = custom_parser()
 
     args.objects.append("ben_cube.stl")
-    # args.objects.append("bottle.stl")
+    args.objects.append("bottle.stl")
     args.objects.append("can.stl")
     # args.objects.append("can.stl")
     # args.objects.append("milk.stl")
@@ -215,7 +219,7 @@ def make_scene():
         support_mesh,
         # for_goal_scene=False,
         for_goal_scene=True,
-        gaussian=[-0.1, 0, 0.15, 0.15],
+        gaussian=[-0.1, 0, 0.15, 0.2],
     )
     goal_scene = Make_Scene.random_arrangement(
         object_names,
@@ -223,7 +227,7 @@ def make_scene():
         "table",
         support_mesh,
         for_goal_scene=True,
-        gaussian=[-0.2, 0, 0.1, 0.15],
+        gaussian=[-0.2, 0, 0.1, 0.2],
     )
 
     return object_names, init_scene, goal_scene

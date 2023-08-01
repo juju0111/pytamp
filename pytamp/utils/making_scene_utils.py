@@ -14,7 +14,7 @@ class Make_Scene(Scene_ACRONYM):
     object_meshes = []
     object_naems = []
 
-    def __init__(self):
+    def __init__(self, ):
         super().__init__()
 
     def get_obj_name(self, obj_fname):
@@ -158,14 +158,22 @@ class Make_Scene(Scene_ACRONYM):
                             scale=gaussian[2:],
                         )
                     )
+                    # print("sampled distance : ", ((-p.x - .9)**2 + (p.y + 0.6)**2) )
+                    if ((-p.x - 1.)**2 + (p.y + 0.6)**2) > .8:
+                        continue
                     if p.within(support_polys[support_index]):
                         pts = [p.x, p.y]
                         break
             else:
-                pts = trimesh.path.polygons.sample(support_polys[support_index], count=1)
-                # for robot arm reach
-                if np.sum(pts[0]) ** 2 > 0.5:
-                    continue
+                while True:
+                    pts = trimesh.path.polygons.sample(support_polys[support_index], count=1)
+                    # for robot arm reach
+                    # print(pts)
+                    if ((-pts[0][0] - 1.)**2 + (pts[0][1] + 0.6)**2) > .5:
+                        continue
+                    else:
+                        break
+
             # To avoid collisions with the support surface
             pts3d = np.append(pts, distance_above_support)
 

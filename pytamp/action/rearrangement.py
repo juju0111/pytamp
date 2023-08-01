@@ -2,11 +2,11 @@ import numpy as np
 from collections import OrderedDict
 from copy import deepcopy
 
-
 from pytamp.action.activity import ActivityBase
 from pytamp.scene.scene import Scene
 from pykin.utils import transform_utils as t_utils
 from pykin.utils import mesh_utils as m_utils
+from pykin.utils.kin_utils import ShellColors as sc
 
 from pytamp.scene.scene_manager import SceneManager
 
@@ -118,7 +118,7 @@ class RearrangementAction(ActivityBase):
     def get_all_grasp_poses_not_collision(self, grasp_poses):
         if not grasp_poses:
             raise ValueError("Not found grasp poses!")
-
+        init_q = deepcopy(self.scene_mngr.scene.robot.init_qpos)
         for all_grasp_pose in grasp_poses:
             # if self.scene_mngr.scene.bench_num == 2:
             # self.scene_mngr.close_gripper(0.015)
@@ -142,14 +142,49 @@ class RearrangementAction(ActivityBase):
                     if self._collide(is_only_gripper=True):
                         is_collision = True
                         break
+                
                 if name == self.move_data.MOVE_post_grasp:
                     self.scene_mngr.set_gripper_pose(pose)
                     if self._collide(is_only_gripper=True):
                         is_collision = True
                         break
+                
+                # inverse_kin check
+                success_check_limit = False 
+                for _ in range(5):
+                    if success_check_limit:
+                        break
+                    q_thetas = self.scene_mngr.scene.robot.inverse_kin(
+                        init_q,
+                        pose,
+                    )
+
+                    if not self._check_q_in_limits(q_thetas):
+                        init_q = np.random.randn(self.scene_mngr.scene.robot.arm_dof)
+                        continue
+                    
+                    self.scene_mngr.set_robot_eef_pose(q_thetas)
+                    grasp_pose_from_ik = self.scene_mngr.get_robot_eef_pose()
+                    pose_error = self.scene_mngr.scene.robot.get_pose_error(
+                        pose, grasp_pose_from_ik
+                    )
+
+                    if pose_error < 0.02:
+                        success_check_limit = True
+                    else:
+                        init_q = np.random.randn(self.scene_mngr.scene.robot.arm_dof)
+                        success_check_limit = False 
+
+                if not success_check_limit:
+                    print(
+                            f"{sc.WARNING}failed at IK{sc.ENDC} "
+                        )
+                    break 
+
             # self.scene_mngr.open_gripper(0.015)
-            if not is_collision:
-                yield all_grasp_pose
+            if (not is_collision) and success_check_limit:
+                # print("return all grasp ", all_grasp_pose)
+                return [all_grasp_pose]
 
     def get_goal_location(self, obj_name: str) -> dict:
         """
@@ -703,3 +738,14 @@ class RearrangementAction(ActivityBase):
         for o_name in self.scene_mngr.scene.goal_objects:
             pose = scene_mngr.scene.objs[o_name].h_mat
             scene_mngr.render.render_axis(pose)
+
+    def _check_q_in_limits(self, q_in):
+        """
+        check q_in within joint limits
+        If q_in is in joint limits, return True
+        otherwise, return False
+
+        Returns:
+            bool (True or False)
+        """
+        return np.all([q_in >= self.scene_mngr.scene.robot.joint_limits_lower, q_in <= self.scene_mngr.scene.robot.joint_limits_upper])
