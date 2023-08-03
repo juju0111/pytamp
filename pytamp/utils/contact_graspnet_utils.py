@@ -339,8 +339,6 @@ class Grasp_Using_Contact_GraspNet:
 
         return collision_free_grasps
 
-    def get_all_grasps(self, collision_free_grasps):
-        grasp_poses = list(self.action.get_all_grasps_from_grasps(collision_free_grasps))
-        grasp_poses_not_collision = self.action.get_all_grasp_poses_not_collision(grasp_poses)
-        self.action.remove_mixed_scene()
-        return grasp_poses_not_collision
+    # def get_all_grasps(self, grasp_set):
+    #     grasp_poses_not_collision = self.action.get_all_grasp_poses_not_collision(grasp_set)
+    #     return grasp_poses_not_collision

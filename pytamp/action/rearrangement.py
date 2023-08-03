@@ -115,54 +115,47 @@ class RearrangementAction(ActivityBase):
         return action
 
     # for level wise - 1.5 (Consider gripper collision, when using contact_graspnet)
-    def get_all_grasp_poses_not_collision(self, grasp_poses):
-        if not grasp_poses:
-            raise ValueError("Not found grasp poses!")
-        init_q = deepcopy(self.scene_mngr.scene.robot.init_qpos)
-        for all_grasp_pose in grasp_poses:
+    def get_all_grasp_poses_not_collision(self, grasp_set):
+        q_thetas = deepcopy(self.scene_mngr.scene.robot.init_qpos)
+
+        for grasp_ in grasp_set:
+            all_grasp_pose = self.get_all_grasps_from_grasps(grasp_)
+
             # if self.scene_mngr.scene.bench_num == 2:
             # self.scene_mngr.close_gripper(0.015)
             for name, pose in all_grasp_pose.items():
                 is_collision = False
 
                 # Already checked collision at grasp_pose
-                # if name == self.move_data.MOVE_grasp:
-                #     self.scene_mngr.set_gripper_pose(pose)
-                #     for name in self.scene_mngr.scene.objs:
-                #         self.scene_mngr.obj_collision_mngr.set_transform(
-                #             name, self.scene_mngr.scene.objs[name].h_mat
-                #         )
-
-                # if self._collide(is_only_gripper=True):
-                #     is_collision = True
-                #     break
+                if name == self.move_data.MOVE_grasp:
+                    self.scene_mngr.set_gripper_pose(pose)
+                    if self._collide(is_only_gripper=True):
+                        is_collision = True
+                        break
 
                 if name == self.move_data.MOVE_pre_grasp:
                     self.scene_mngr.set_gripper_pose(pose)
                     if self._collide(is_only_gripper=True):
                         is_collision = True
                         break
-                
+
                 if name == self.move_data.MOVE_post_grasp:
                     self.scene_mngr.set_gripper_pose(pose)
                     if self._collide(is_only_gripper=True):
                         is_collision = True
                         break
-                
+
                 # inverse_kin check
-                success_check_limit = False 
+                success_check_limit = False
                 for _ in range(5):
                     if success_check_limit:
                         break
+
                     q_thetas = self.scene_mngr.scene.robot.inverse_kin(
-                        init_q,
+                        q_thetas,
                         pose,
                     )
 
-                    if not self._check_q_in_limits(q_thetas):
-                        init_q = np.random.randn(self.scene_mngr.scene.robot.arm_dof)
-                        continue
-                    
                     self.scene_mngr.set_robot_eef_pose(q_thetas)
                     grasp_pose_from_ik = self.scene_mngr.get_robot_eef_pose()
                     pose_error = self.scene_mngr.scene.robot.get_pose_error(
@@ -172,18 +165,18 @@ class RearrangementAction(ActivityBase):
                     if pose_error < 0.02:
                         success_check_limit = True
                     else:
-                        init_q = np.random.randn(self.scene_mngr.scene.robot.arm_dof)
-                        success_check_limit = False 
+                        success_check_limit = False
 
                 if not success_check_limit:
-                    print(
-                            f"{sc.WARNING}failed at IK{sc.ENDC} "
-                        )
-                    break 
+                    # print(f"{sc.WARNING}failed at IK{sc.ENDC} ")
+                    break
 
-            # self.scene_mngr.open_gripper(0.015)
+            if is_collision:
+                print("collision !!! ")
+
             if (not is_collision) and success_check_limit:
                 # print("return all grasp ", all_grasp_pose)
+                self.remove_mixed_scene()
                 return [all_grasp_pose]
 
     def get_goal_location(self, obj_name: str) -> dict:
@@ -327,7 +320,7 @@ class RearrangementAction(ActivityBase):
             result_all_joint_path.append(result_joint_path)
 
             return result_all_joint_path
-        
+
     def get_possible_joint_path_level_2_for_rearr(
         self, scene: Scene = None, release_poses: dict = {}, init_thetas=None
     ):
@@ -346,9 +339,7 @@ class RearrangementAction(ActivityBase):
         post_release_pose = release_poses[self.move_data.MOVE_post_release]
         success_joint_path = True
 
-        self.scene_mngr.attach_object_on_gripper(
-            scene.rearr_obj_name, True
-        )
+        self.scene_mngr.attach_object_on_gripper(scene.rearr_obj_name, True)
 
         pre_release_joint_path = self.get_rrt_star_path(default_thetas, pre_release_pose)
         self.cost = 0
@@ -360,16 +351,10 @@ class RearrangementAction(ActivityBase):
                 self.scene_mngr.detach_object_from_gripper()
                 self.scene_mngr.add_object(
                     self.scene_mngr.attached_obj_name,
-                    self.scene_mngr.init_objects[
-                        self.scene_mngr.attached_obj_name
-                    ].gtype,
-                    self.scene_mngr.init_objects[
-                        self.scene_mngr.attached_obj_name
-                    ].gparam,
+                    self.scene_mngr.init_objects[self.scene_mngr.attached_obj_name].gtype,
+                    self.scene_mngr.init_objects[self.scene_mngr.attached_obj_name].gparam,
                     scene.objs[scene.rearr_obj_name].h_mat,
-                    self.scene_mngr.init_objects[
-                        self.scene_mngr.attached_obj_name
-                    ].color,
+                    self.scene_mngr.init_objects[self.scene_mngr.attached_obj_name].color,
                 )
                 # release_pose -> post_release_pose (cartesian)
                 post_release_joint_path = self.get_cartesian_path(
@@ -417,7 +402,7 @@ class RearrangementAction(ActivityBase):
             result_all_joint_path.append(result_joint_path)
 
             return result_all_joint_path
-        
+
     def get_possible_joint_path_level_2_for_grasp(
         self, scene: Scene = None, grasp_poses: dict = {}, init_thetas=None
     ):
@@ -449,9 +434,7 @@ class RearrangementAction(ActivityBase):
             grasp_joint_path = self.get_cartesian_path(pre_grasp_joint_path[-1], grasp_pose)
             if grasp_joint_path:
                 self.scene_mngr.set_robot_eef_pose(grasp_joint_path[-1])
-                self.scene_mngr.attach_object_on_gripper(
-                    scene.rearr_obj_name
-                )
+                self.scene_mngr.attach_object_on_gripper(scene.rearr_obj_name)
                 # grasp_pose -> post_graso_pose (cartesian)
                 post_grasp_joint_path = self.get_cartesian_path(
                     grasp_joint_path[-1], post_grasp_pose
@@ -467,16 +450,10 @@ class RearrangementAction(ActivityBase):
                 self.scene_mngr.detach_object_from_gripper()
                 self.scene_mngr.add_object(
                     self.scene_mngr.attached_obj_name,
-                    self.scene_mngr.init_objects[
-                        self.scene_mngr.attached_obj_name
-                    ].gtype,
-                    self.scene_mngr.init_objects[
-                        self.scene_mngr.attached_obj_name
-                    ].gparam,
+                    self.scene_mngr.init_objects[self.scene_mngr.attached_obj_name].gtype,
+                    self.scene_mngr.init_objects[self.scene_mngr.attached_obj_name].gparam,
                     scene.objs[scene.rearr_obj_name].h_mat,
-                    self.scene_mngr.init_objects[
-                        self.scene_mngr.attached_obj_name
-                    ].color,
+                    self.scene_mngr.init_objects[self.scene_mngr.attached_obj_name].color,
                 )
             else:
                 success_joint_path = False
@@ -494,7 +471,7 @@ class RearrangementAction(ActivityBase):
             result_joint_path.update({self.move_data.MOVE_default_grasp: default_joint_path})
             result_all_joint_path.append(result_joint_path)
             return result_all_joint_path
-        
+
     def get_possible_transitions(self, scene: Scene = None, action: dict = {}):
         """
         working on table top_scene
@@ -748,4 +725,9 @@ class RearrangementAction(ActivityBase):
         Returns:
             bool (True or False)
         """
-        return np.all([q_in >= self.scene_mngr.scene.robot.joint_limits_lower, q_in <= self.scene_mngr.scene.robot.joint_limits_upper])
+        return np.all(
+            [
+                q_in >= self.scene_mngr.scene.robot.joint_limits_lower,
+                q_in <= self.scene_mngr.scene.robot.joint_limits_upper,
+            ]
+        )

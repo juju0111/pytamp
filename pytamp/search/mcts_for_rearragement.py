@@ -34,6 +34,7 @@ class MCTS_rearrangement:
         debug_mode=False,
         use_pick_action=False,
         consider_next_scene=True,
+        do_level_2=True,
     ):
         self.node_data = NodeData
         self.scene_mngr = scene_mngr
@@ -41,8 +42,11 @@ class MCTS_rearrangement:
         self.state = scene_mngr.scene
         self.use_pick_action = use_pick_action
         self.consider_next_scene = consider_next_scene
+        self._do_level_2 = do_level_2
+
         self.prev_rearr_obj_num = 0
         self.next_rearr_obj_num = 0
+
         bench_num = self.scene_mngr.scene.bench_num
 
         if bench_num == 0:
@@ -59,6 +63,7 @@ class MCTS_rearrangement:
             #     retreat_distance=0.15,
             # )
             self.init_scene = init_scene
+
         if bench_num == 1:
             self.pick_action = PickAction(scene_mngr, n_contacts=0, n_directions=1)
             self.place_action = PlaceAction(
@@ -196,7 +201,7 @@ class MCTS_rearrangement:
         if self.debug_mode:
             # visited_tree = self.get_visited_subtree()
             # self.visualize_tree("Next Logical Node", self.tree)
-            pass 
+            pass
         self.success_level_1_leaf_node = None
 
         self._level_wise_1_optimize_rearr(state_node=0, depth=0)
@@ -237,11 +242,16 @@ class MCTS_rearrangement:
                         self._level_wise_between_1_and_2_optimize(
                             success_level_1_sub_nodes, self.consider_next_scene
                         )
-                        self._level_wise_2_optimize_rearr(success_level_1_sub_nodes)
-                        self._update_success_level_1_and_2(success_level_1_sub_nodes)
-                        self.values_for_level_2.append(
-                            self.get_max_value_level_2(success_level_1_sub_nodes)
-                        )
+                        if self._do_level_2:
+                            self._level_wise_2_optimize_rearr(success_level_1_sub_nodes)
+                            self._update_success_level_1_and_2(success_level_1_sub_nodes)
+
+                            print(
+                                f"{sc.HEADER} level 2 value : {self.get_max_value_level_2(success_level_1_sub_nodes)} {sc.ENDC}"
+                            )
+                            self.values_for_level_2.append(
+                                self.get_max_value_level_2(success_level_1_sub_nodes)
+                            )
 
                     self.history_level_1_optimal_nodes.append(success_level_1_sub_nodes)
                     self.history_level_1_values.append(
@@ -253,9 +263,9 @@ class MCTS_rearrangement:
                     )
                     print("Add level_1_node!")
 
-                    level_2 = True 
+                    level_2 = True
                     for i in success_level_1_sub_nodes:
-                        if not self.tree.nodes[i]['level2']:
+                        if not self.tree.nodes[i]["level2"]:
                             level_2 = False
                     if level_2:
                         self.history_level_2_dict[len(self.history_level_2_dict)] = dict(
@@ -354,7 +364,7 @@ class MCTS_rearrangement:
             # if cur_logical_action[self.pick_action.info.TYPE] == "place":
             #     self.render_state("cur_state", cur_state, close_gripper=True)
             #     # self.render_state("next_state", next_state, close_gripper=True)
-            
+
             # if cur_logical_action[self.rearr_action.info.TYPE] == "rearr":
             #     self.render_state("cur_state", cur_state, close_gripper=False)
             pass
@@ -393,9 +403,14 @@ class MCTS_rearrangement:
             next_node = self.tree.nodes[sub_optimal_nodes[2 * i + 2]]
             obj_to_manipulate = current_node["action"]["rearr_obj_name"]
 
+            if "grasp_poses" in current_node:
+                print("already has grasp_poses")
+                continue
+
             print(f"{sc.COLOR_BROWN}{obj_to_manipulate}{sc.ENDC}")
-            chance_ = 2
-            for _ in range(2):
+            chance_ = 3
+
+            for _ in range(3):
                 if use_next_scene:
                     grasps = self.grasp_generator.get_grasp(
                         init_scene=self.init_scene,
@@ -408,9 +423,18 @@ class MCTS_rearrangement:
                         current_node=current_node,
                     )
 
+                if len(grasps) > 5:
+                    random_list = np.random.choice(len(grasps), 5, replace=False)
+                    grasps = grasps[random_list]
+
+                current_node[self.rearr_action.info.GRASP_SET] = deepcopy(grasps)
+
                 if len(grasps) >= 1:
                     # update next node's grasp_pose
-                    grasp_poses_not_collision = self.grasp_generator.get_all_grasps(grasps)
+                    grasp_poses_not_collision = self.rearr_action.get_all_grasp_poses_not_collision(
+                        grasps
+                    )
+
                     if not grasp_poses_not_collision:
                         current_node[NodeData.LEVEL1_5] = False
                         next_node[NodeData.LEVEL1_5] = False
@@ -432,12 +456,14 @@ class MCTS_rearrangement:
                         transform_bet_gripper_n_obj,
                         next_node["state"].objs[obj_to_manipulate].h_mat,
                     )
-                    # release_pose_ik_check = self.check_IK(self.scene_mngr.scene.robot.init_qpos, eef_pose)
+
+                    # release_pose_ik_check = self.check_IK(
+                    #     self.scene_mngr.scene.robot.init_qpos, eef_pose
+                    # )
                     # if not release_pose_ik_check:
-                    #     print(
-                    #             f"{sc.COLOR_RED}failed to compute IK release pose {sc.ENDC}"
-                    #         )
+                    #     print(f"{sc.COLOR_RED}failed to compute IK release pose {sc.ENDC}")
                     #     continue
+
                     release_poses = self.rearr_action.get_all_release_poses(eef_pose)
                     next_node["action"].update(release_poses)
 
@@ -454,7 +480,7 @@ class MCTS_rearrangement:
                     next_node[NodeData.LEVEL1_5] = False
             if chance_ == 0:
                 self.infeasible_sub_nodes.append(sub_optimal_nodes)
-            #     # break 
+            #     # break
 
     def _select_logical_action_node_rearr(
         self,
@@ -978,6 +1004,10 @@ class MCTS_rearrangement:
             )
             if node_type == "action":
                 continue
+            if self.tree.nodes[sub_optimal_node].get(NodeData.JOINTS):
+                print("Already know path")
+                continue
+
             success_place = False
             action: dict = self.tree.nodes[sub_optimal_node].get(NodeData.ACTION)
 
@@ -1603,10 +1633,13 @@ class MCTS_rearrangement:
             if self.tree.nodes[i]["type"] == "state":
                 self.render_rearr_state(ax, f"{i}", self.tree.nodes[i]["state"])
 
-
-    def check_IK(self, q_pose, target_pose,):
-        # inverse_kin eef_pose 
-        success_check_limit = False 
+    def check_IK(
+        self,
+        q_pose,
+        target_pose,
+    ):
+        # inverse_kin eef_pose
+        success_check_limit = False
         for _ in range(5):
             if success_check_limit:
                 break
@@ -1618,20 +1651,19 @@ class MCTS_rearrangement:
             if not self.rearr_action._check_q_in_limits(q_thetas):
                 init_q = np.random.randn(self.scene_mngr.scene.robot.arm_dof)
                 continue
-            
+
             self.scene_mngr.set_robot_eef_pose(q_thetas)
             grasp_pose_from_ik = self.scene_mngr.get_robot_eef_pose()
-            pose_error = self.scene_mngr.scene.robot.get_pose_error(
-                target_pose, grasp_pose_from_ik
-            )
+            pose_error = self.scene_mngr.scene.robot.get_pose_error(target_pose, grasp_pose_from_ik)
 
             if pose_error < 0.02:
                 success_check_limit = True
             else:
                 init_q = np.random.randn(self.scene_mngr.scene.robot.arm_dof)
-                success_check_limit = False 
+                success_check_limit = False
 
         return success_check_limit
+
     @staticmethod
     def weird_division(n, d):
         return round(n / d, 3) if d else 0
