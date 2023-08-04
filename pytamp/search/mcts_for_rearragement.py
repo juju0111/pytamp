@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 import random
+import time
 from copy import deepcopy
 from networkx.drawing.nx_agraph import graphviz_layout
 
@@ -49,11 +50,15 @@ class MCTS_rearrangement:
 
         bench_num = self.scene_mngr.scene.bench_num
 
+        self.time_used_in_level_1 = 0
+        self.time_used_in_level_1_5 = 0
+        self.time_used_in_level_2 = 0
+
         if bench_num == 0:
             # robot action은 우선 패스하고 object transition만 고려해서 Goal Scene을 만족하는
             # state가 나올 때 까지 search!!
             self.rearr_action = RearrangementAction(scene_mngr)
-            self.pick_action = PickAction(scene_mngr, n_contacts=15, n_directions=5)
+            self.pick_action = PickAction(scene_mngr, n_contacts=5, n_directions=7)
             # self.place_action = PlaceAction(
             #     scene_mngr,
             #     n_samples_held_obj=0,
@@ -204,7 +209,9 @@ class MCTS_rearrangement:
             pass
         self.success_level_1_leaf_node = None
 
+        level_1_start_time = time.time()
         self._level_wise_1_optimize_rearr(state_node=0, depth=0)
+        self.time_used_in_level_1 += time.time() - level_1_start_time
         max_level_1_value = self.get_max_value_level_1()
         self.values_for_level_1.append(max_level_1_value)
 
@@ -230,7 +237,10 @@ class MCTS_rearrangement:
 
                 if not self.has_aleardy_level_1_optimal_nodes:
                     if self.use_pick_action:
+                        level_2_start_time = time.time()
                         self._level_wise_2_optimize(success_level_1_sub_nodes)
+                        self.time_used_in_level_2 += time.time() - level_2_start_time
+
                         self._update_success_level_1_and_2(success_level_1_sub_nodes)
 
                         self.values_for_level_2.append(
@@ -239,11 +249,17 @@ class MCTS_rearrangement:
 
                     # TODO
                     else:
+                        level_1_5_start_time = time.time()
                         self._level_wise_between_1_and_2_optimize(
                             success_level_1_sub_nodes, self.consider_next_scene
                         )
+                        self.time_used_in_level_1_5 += time.time() - level_1_5_start_time
+
                         if self._do_level_2:
+                            level_2_start_time = time.time()
                             self._level_wise_2_optimize_rearr(success_level_1_sub_nodes)
+                            self.time_used_in_level_2 += time.time() - level_2_start_time
+
                             self._update_success_level_1_and_2(success_level_1_sub_nodes)
 
                             print(
@@ -807,7 +823,7 @@ class MCTS_rearrangement:
 
         # reward function setting
         if self.scene_mngr.scene.bench_num == 0:
-            inf_reward = self.infeasible_reward / (max(1, depth)) * 2
+            inf_reward = self.infeasible_reward / (max(1, depth)) * 10
 
         elif self.scene_mngr.scene.bench_num == 1:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 10
@@ -844,7 +860,10 @@ class MCTS_rearrangement:
                     cur_logical_action[self.rearr_action.info.REARR_OBJ_NAME]
                 )
                 self.next_rearr_obj_num = len(next_state.rearranged_object)
-                # print("# next_scene rearr_num : ", self.next_rearr_obj_num)
+
+                if self.use_pick_action:
+                    depth /= 2
+
                 if next_state_is_success:
                     # When you place well on your goal
                     if self.next_rearr_obj_num - self.prev_rearr_obj_num == 1:
@@ -863,7 +882,9 @@ class MCTS_rearrangement:
                     if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                         print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
                         return reward
-
+            else:
+                # when do pick
+                return 0
         elif self.scene_mngr.scene.bench_num == 1:
             prev_stacked_box_num = cur_state.success_stacked_box_num
             next_state_is_success = next_state.check_success_stacked_bench_1()
@@ -968,15 +989,6 @@ class MCTS_rearrangement:
                     f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
                 )
                 return
-
-        # # When use Contact_graspnet, you have to check Level 1.5
-        level_1_5 = [
-            True for n in sub_optimal_nodes if self.tree.nodes[n][NodeData.LEVEL1_5] is True
-        ]
-        print("level 1_5 : ", level_1_5)
-        if not all(level_1_5):
-            print(f"{sc.FAIL}Failed at Level 1.5{sc.ENDC}")
-            return
 
         for infeasible_node in self.infeasible_sub_nodes:
             if set(sub_optimal_nodes).issubset(infeasible_node):
@@ -1267,6 +1279,18 @@ class MCTS_rearrangement:
             next_node = children[best_idx]
             return [cur_node] + self.get_best_node(tree, next_node)
 
+    def get_minimum_cost_node(self):
+        min_cost = 100
+        min_cost_nodes = []
+        for _, n in self.history_level_2_dict.items():
+            cost = 0
+            for n_num in n["nodes"]:
+                cost += self.tree.nodes[n_num].get("cost")
+            if min_cost > cost:
+                min_cost = cost
+                min_cost_nodes = n["nodes"]
+        return min_cost_nodes
+
     def get_success_subtree(self, optimizer_level=1):
         visited_nodes = []
         if optimizer_level == 1:
@@ -1359,6 +1383,9 @@ class MCTS_rearrangement:
         if value_sum == 0:
             return self.level2_max_value
         else:
+            print(
+                f"{sc.COLOR_GREEN}History : { self.tree.nodes[0][NodeData.VALUE_HISTORY][-1] } value_sum : {value_sum}{sc.ENDC}"
+            )
             value_sum = self.tree.nodes[0][NodeData.VALUE_HISTORY][-1] + value_sum
             if self.level2_max_value < value_sum:
                 if not set(sub_optimal_nodes).issubset(self.optimal_nodes):
@@ -1632,6 +1659,13 @@ class MCTS_rearrangement:
         for i in nodes:
             if self.tree.nodes[i]["type"] == "state":
                 self.render_rearr_state(ax, f"{i}", self.tree.nodes[i]["state"])
+
+    def get_visit_node_num(self):
+        count = 0
+        for i in self.tree.nodes:
+            if self.tree.nodes[i]["visit"] > 1:
+                count += 1
+        return count
 
     def check_IK(
         self,

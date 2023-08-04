@@ -127,19 +127,7 @@ class RearrangementAction(ActivityBase):
                 is_collision = False
 
                 # Already checked collision at grasp_pose
-                if name == self.move_data.MOVE_grasp:
-                    self.scene_mngr.set_gripper_pose(pose)
-                    if self._collide(is_only_gripper=True):
-                        is_collision = True
-                        break
-
-                if name == self.move_data.MOVE_pre_grasp:
-                    self.scene_mngr.set_gripper_pose(pose)
-                    if self._collide(is_only_gripper=True):
-                        is_collision = True
-                        break
-
-                if name == self.move_data.MOVE_post_grasp:
+                if "grasp" in name:
                     self.scene_mngr.set_gripper_pose(pose)
                     if self._collide(is_only_gripper=True):
                         is_collision = True
@@ -164,6 +152,7 @@ class RearrangementAction(ActivityBase):
 
                     if pose_error < 0.02:
                         success_check_limit = True
+
                     else:
                         success_check_limit = False
 

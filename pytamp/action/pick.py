@@ -138,10 +138,19 @@ class PickAction(ActivityBase):
         if scene is not None:
             self.deepcopy_scene(scene)
 
-        grasp_poses = list(self.get_all_grasp_poses(obj_name=obj_name))
-        if self.scene_mngr.heuristic:
-            grasp_poses.extend(list(self.get_grasp_pose_from_heuristic(obj_name)))
-        grasp_poses_not_collision = list(self.get_all_grasp_poses_not_collision(grasp_poses))
+        grasp_poses_not_collision = None
+
+        # do this untill find collision free grasp
+        for i in range(10):
+            if grasp_poses_not_collision:
+                break
+            grasp_poses = list(self.get_all_grasp_poses(obj_name=obj_name))
+            if self.scene_mngr.heuristic:
+                grasp_poses.extend(list(self.get_grasp_pose_from_heuristic(obj_name)))
+            if not grasp_poses:
+                continue
+            grasp_poses_not_collision = list(self.get_all_grasp_poses_not_collision(grasp_poses))
+
         action_level_1 = self.get_action(obj_name, grasp_poses_not_collision)
         return action_level_1
 
@@ -336,7 +345,9 @@ class PickAction(ActivityBase):
             next_scene.pick_obj_name = pick_obj
             next_scene.robot.gripper.attached_obj_name = pick_obj
             next_scene.robot.gripper.pick_obj_pose = deepcopy(next_scene.objs[pick_obj].h_mat)
-            next_scene.robot.gripper.transform_bet_gripper_n_obj = transform_bet_gripper_n_obj
+            next_scene.robot.gripper.transform_bet_gripper_n_obj = deepcopy(
+                transform_bet_gripper_n_obj
+            )
 
             # Move a gripper to default pose
             # heuristic setting..!!
@@ -348,7 +359,8 @@ class PickAction(ActivityBase):
 
             # change pick_obj's h_mat & Move pick object to default pose
             next_scene.objs[pick_obj].h_mat = np.dot(
-                next_scene.robot.gripper.get_gripper_pose(), transform_bet_gripper_n_obj
+                next_scene.robot.gripper.get_gripper_pose(),
+                next_scene.robot.gripper.transform_bet_gripper_n_obj,
             )
             next_scene.pick_obj_default_pose = deepcopy(next_scene.objs[pick_obj].h_mat)
 
@@ -586,6 +598,11 @@ class PickAction(ActivityBase):
             for _, grasp_dir in enumerate(m_utils.get_grasp_directions(line, self.n_directions)):
                 y = m_utils.normalize(line)
                 z = grasp_dir
+
+                if abs(np.dot(z, [0, 0, 1])) < 0.5:
+                    continue
+
+                # print("grasp_dir : ", grasp_dir)
                 x = np.cross(y, z)
 
                 tcp_pose = np.eye(4)

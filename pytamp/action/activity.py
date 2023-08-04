@@ -146,7 +146,7 @@ class ActivityBase(metaclass=ABCMeta):
     def get_rrt_star_path(self, cur_q, goal_pose=None, goal_q=None, max_iter=500, n_step=10):
         self.rrt_planner.run(self.scene_mngr, cur_q, goal_pose, goal_q=goal_q, max_iter=max_iter)
         return self.rrt_planner.get_joint_path(n_step=n_step)
-
+    
     def simulate_path(
         self,
         pnp_all_joint_path,

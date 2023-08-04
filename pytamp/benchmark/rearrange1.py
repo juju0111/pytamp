@@ -85,8 +85,17 @@ class Rearrange1(Benchmark):
             #         -np.pi / 4,
             #     ]
             # )
-            self.robot.init_qpos = np.array([ 6.33525628e-13, -5.38478180e-01,  5.44820130e-12, -2.69413060e+00,
-                                    2.15158886e-12,  2.22111507e+00, -7.85398163e-01])
+            self.robot.init_qpos = np.array(
+                [
+                    6.33525628e-13,
+                    -5.38478180e-01,
+                    5.44820130e-12,
+                    -2.69413060e00,
+                    2.15158886e-12,
+                    2.22111507e00,
+                    -7.85398163e-01,
+                ]
+            )
         if self.robot_name == "doosan":
             self.robot.setup_link_name("base_0", "right_hand")
             self.robot.init_qpos = np.array([0, 0, np.pi / 2, 0, np.pi / 2, 0])
@@ -105,12 +114,12 @@ class Rearrange1(Benchmark):
 
         # object_pose transformation according to Table Pose
         for o_name, o_pose in self.init_scene._poses.items():
-            print(o_name ," o_pose : ", o_pose)
+            # print(o_name ," o_pose : ", o_pose)
             self.init_scene._poses[o_name] = self.table_pose.h_mat @ o_pose
 
         for o_name, o_pose in self.param["goal_scene"].items():
             self.param["goal_scene"][o_name] = self.table_pose.h_mat @ o_pose
-            print(o_name ," o_pose : ", o_pose)
+            # print(o_name ," o_pose : ", o_pose)
 
         # assign color
         self.init_scene.colorize()
