@@ -14,7 +14,9 @@ class Make_Scene(Scene_ACRONYM):
     object_meshes = []
     object_naems = []
 
-    def __init__(self, ):
+    def __init__(
+        self,
+    ):
         super().__init__()
 
     def get_obj_name(self, obj_fname):
@@ -39,7 +41,7 @@ class Make_Scene(Scene_ACRONYM):
         object_names,
         object_meshes,
         support_names,
-        support_mesh,
+        support_meshes,
         distance_above_support=0.002,
         gaussian=None,
         for_goal_scene=False,
@@ -57,7 +59,8 @@ class Make_Scene(Scene_ACRONYM):
             Scene: Scene representation.
         """
         s = cls()
-        s.add_object(support_names, support_mesh, pose=np.eye(4), support=True)
+        for n, m in zip(support_names, support_meshes):
+            s.add_object(n, m, pose=np.eye(4), support=True)
 
         for i, obj_mesh in enumerate(object_meshes):
             s.place_object(
@@ -67,6 +70,36 @@ class Make_Scene(Scene_ACRONYM):
                 gaussian=gaussian,
                 for_goal_scene=for_goal_scene,
             )
+        return s
+
+    @classmethod
+    def static_arrangement(
+        cls,
+        object_names,
+        object_meshes,
+        object_poses,
+        support_names,
+        support_meshes,
+    ):
+        """Generate a random scene by arranging all object meshes on any support surface of a provided support mesh.
+
+        Args:
+            object_names (list[str]): List of names name corresponding to the meshes
+            object_meshes (list[trimesh.Trimesh]): List of meshes of all objects to be placed on top of the support mesh.
+            support_mesh (trimesh.Trimesh): Mesh of the support object.
+            distance_above_support (float, optional): Distance the object mesh will be placed above the support surface. Defaults to 0.0.
+            gaussian (list[float], optional): Normal distribution for position in plane (mean_x, mean_y, std_x, std_y). Defaults to None.
+
+        Returns:
+            Scene: Scene representation.
+        """
+        s = cls()
+
+        for n, m in zip(support_names, support_meshes):
+            s.add_object(n, m, pose=np.eye(4), support=True)
+
+        for i, obj_mesh in enumerate(object_meshes):
+            s.place_object_specific_pose(object_names[i], obj_mesh, object_poses[i])
         return s
 
     def _get_random_stable_pose(self, stable_poses, stable_poses_probs):
@@ -108,12 +141,14 @@ class Make_Scene(Scene_ACRONYM):
         obj_mesh,
         max_iter,
         distance_above_support,
+        support_obj_name=None,
         gaussian=None,
         for_goal_scene=False,
     ):
         """Try to find a non-colliding stable pose on top of any support surface.
 
         Args:
+            support_obj_name (str) : Support obj name to place.
             obj_mesh (trimesh.Trimesh): Object mesh to be placed.
             max_iter (int): Maximum number of attempts to place to object randomly.
             distance_above_support (float): Distance the object mesh will be placed above the support surface.
@@ -126,7 +161,8 @@ class Make_Scene(Scene_ACRONYM):
             bool: Whether a placement pose was found.
             np.ndarray: Homogenous 4x4 matrix describing the object placement pose. Or None if none was found.
         """
-        support_polys, support_T, sup_obj_names = self._get_support_polygons()
+
+        support_polys, support_T, sup_obj_names = self._get_specific_support_polygons("table")
         if len(support_polys) == 0:
             raise RuntimeError("No support polygons found!")
         # get stable poses for object
@@ -159,7 +195,7 @@ class Make_Scene(Scene_ACRONYM):
                         )
                     )
                     # print("sampled distance : ", ((-p.x - .9)**2 + (p.y + 0.6)**2) )
-                    if ((-p.x - 1.)**2 + (p.y + 0.6)**2) > .8:
+                    if ((-p.x - 1.0) ** 2 + (p.y + 0.6) ** 2) > 0.8:
                         continue
                     if p.within(support_polys[support_index]):
                         pts = [p.x, p.y]
@@ -167,11 +203,10 @@ class Make_Scene(Scene_ACRONYM):
             else:
                 while True:
                     pts = trimesh.path.polygons.sample(support_polys[support_index], count=1)
+
                     # for robot arm reach
                     # print(pts)
-                    if ((-pts[0][0] - 1.)**2 + (pts[0][1] + 0.6)**2) > .5:
-                        continue
-                    else:
+                    if ((-pts[0][0] - 1.0) ** 2 + (pts[0][1] + 0.6) ** 2) < 0.4:
                         break
 
             # To avoid collisions with the support surface
@@ -197,7 +232,6 @@ class Make_Scene(Scene_ACRONYM):
             colliding = self.in_collision_with(
                 obj_mesh, placement_T, min_distance=distance_above_support
             )
-
             iter += 1
 
         return not colliding, placement_T, sup_obj_names[support_index] if not colliding else None
@@ -227,6 +261,7 @@ class Make_Scene(Scene_ACRONYM):
             obj_mesh,
             max_iter,
             distance_above_support=distance_above_support,
+            support_obj_name="table",
             gaussian=gaussian,
             for_goal_scene=for_goal_scene,
         )
@@ -237,6 +272,136 @@ class Make_Scene(Scene_ACRONYM):
             print("Couldn't place object", obj_id, "!")
 
         return success
+
+    def find_object_placement_from_specific_object(
+        self,
+        obj_mesh,
+        distance_above_support,
+        support_obj_name,
+        for_goal_scene=False,
+    ):
+        """Try to find a non-colliding stable pose on top of any support surface.
+
+        Args:
+            support_obj_name (str) : Support obj name to place.
+            obj_mesh (trimesh.Trimesh): Object mesh to be placed.
+            max_iter (int): Maximum number of attempts to place to object randomly.
+            distance_above_support (float): Distance the object mesh will be placed above the support surface.
+            gaussian (list[float], optional): Normal distribution for position in plane (mean_x, mean_y, std_x, std_y). Defaults to None.
+
+        Raises:
+            RuntimeError: In case the support object(s) do not provide any support surfaces.
+
+        Returns:
+            bool: Whether a placement pose was found.
+            np.ndarray: Homogenous 4x4 matrix describing the object placement pose. Or None if none was found.
+        """
+        support_polys, support_T, sup_obj_names = self._get_specific_support_polygons(
+            support_obj_name
+        )
+
+        if len(support_polys) == 0:
+            raise RuntimeError("No support polygons found!")
+        # get stable poses for object
+        stable_obj = obj_mesh.copy()
+        stable_obj.vertices -= stable_obj.center_mass
+        stable_poses, stable_poses_probs = stable_obj.compute_stable_poses(
+            threshold=0, sigma=0, n_samples=1
+        )
+        # stable_poses, stable_poses_probs = obj_mesh.compute_stable_poses(threshold=0, sigma=0, n_samples=1)
+
+        # Sample support index
+        support_index = max(enumerate(support_polys), key=lambda x: x[1].area)[0]
+
+        iter = 0
+        colliding = True
+
+        pts = trimesh.path.polygons.sample(support_polys[support_index], count=1)
+
+        # To avoid collisions with the support surface
+        pts3d = np.append(pts, distance_above_support)
+
+        # Transform plane coordinates into scene coordinates
+        placement_T = np.dot(
+            support_T[support_index],
+            trimesh.transformations.translation_matrix(pts3d),
+        )
+
+        if for_goal_scene:
+            pose = self._get_random_stable_pose_for_goal_scene(stable_poses, stable_poses_probs)
+        else:
+            pose = self._get_random_stable_pose(stable_poses, stable_poses_probs)
+
+        placement_T = np.dot(
+            np.dot(placement_T, pose), tra.translation_matrix(-obj_mesh.center_mass)
+        )
+
+        # Check collisions pass
+        # colliding = self.in_collision_with(
+        #     obj_mesh, placement_T, min_distance=distance_above_support
+        # )
+        # print(colliding)
+        # iter += 1
+        return True, placement_T, sup_obj_names[support_index]
+
+    def place_object_specific_support_obect(
+        self,
+        support_obj_name,
+        obj_id,
+        obj_mesh,
+        max_iter=100,
+        distance_above_support=0.0,
+        gaussian=None,
+        for_goal_scene=False,
+    ):
+        """Add object and place it in a non-colliding stable pose on top of any support surface.
+
+        Args:
+            obj_id (str): Name of the object to place.
+            obj_mesh (trimesh.Trimesh): Mesh of the object to be placed.
+            max_iter (int, optional): Maximum number of attempts to find a placement pose. Defaults to 100.
+            distance_above_support (float, optional): Distance the object mesh will be placed above the support surface. Defaults to 0.0.
+            gaussian (list[float], optional): Normal distribution for position in plane (mean_x, mean_y, std_x, std_y). Defaults to None.
+
+        Returns:
+            [type]: [description]
+        """
+        success, placement_T, sup_obj_name = self.find_object_placement(
+            obj_mesh,
+            max_iter,
+            distance_above_support=distance_above_support,
+            support_obj_name=support_obj_name,
+            gaussian=gaussian,
+            for_goal_scene=for_goal_scene,
+        )
+
+        if success:
+            self.add_object(obj_id, obj_mesh, placement_T)
+        else:
+            print("Couldn't place object", obj_id, "!")
+
+        return success
+
+    def place_object_specific_pose(
+        self,
+        obj_id,
+        obj_mesh,
+        placement_T,
+    ):
+        """Add object and place it in a non-colliding stable pose on top of any support surface.
+
+        Args:
+            obj_id (str): Name of the object to place.
+            obj_mesh (trimesh.Trimesh): Mesh of the object to be placed.
+            max_iter (int, optional): Maximum number of attempts to find a placement pose. Defaults to 100.
+            distance_above_support (float, optional): Distance the object mesh will be placed above the support surface. Defaults to 0.0.
+            gaussian (list[float], optional): Normal distribution for position in plane (mean_x, mean_y, std_x, std_y). Defaults to None.
+
+        Returns:
+            [type]: [description]
+        """
+
+        self.add_object(obj_id, obj_mesh, placement_T)
 
     def as_pyrender_scene(self):
         """Return pyrender scene representation.
@@ -270,6 +435,75 @@ class Make_Scene(Scene_ACRONYM):
         )
 
         return transformed_point_cloud
+
+    def _get_specific_support_polygons(
+        self,
+        support_obj_name: str,
+        min_area=0.0001,
+        gravity=np.array([0, 0, -1.0]),
+        erosion_distance=0.015,
+    ):
+        """Extract support facets by comparing normals with gravity vector and checking area.
+
+        Args:
+            support_obj_name
+            min_area (float, optional): Minimum area of support facets [m^2]. Defaults to 0.01.
+            gravity ([np.ndarray], optional): Gravity vector in scene coordinates. Defaults to np.array([0, 0, -1.0]).
+            erosion_distance (float, optional): Clearance from support surface edges. Defaults to 0.02.
+
+        Returns:
+            list[trimesh.path.polygons.Polygon]: list of support polygons.
+            list[np.ndarray]: list of homogenous 4x4 matrices describing the polygon poses in scene coordinates.
+        """
+        assert np.isclose(np.linalg.norm(gravity), 1.0)
+
+        support_polygons = []
+        support_polygons_T = []
+        obj_names = []
+        # Add support plane if it is set (although not infinite)
+        obj_name = support_obj_name
+        # print("object_name : ", obj_name)
+
+        if support_obj_name == "table":
+            obj_mesh = self._support_objects.get(support_obj_name)
+        else:
+            obj_mesh = self._support_objects.get(support_obj_name + "_support")
+
+        # get all facets that are aligned with -gravity and bigger than min_area
+        support_facet_indices = np.argsort(obj_mesh.facets_area)
+        support_facet_indices = [
+            idx
+            for idx in support_facet_indices
+            if np.isclose(obj_mesh.facets_normal[idx].dot(-gravity), 1.0, atol=0.5)
+            and obj_mesh.facets_area[idx] > min_area
+        ]
+
+        for inds in support_facet_indices:
+            index = inds
+            normal = obj_mesh.facets_normal[index]
+            origin = obj_mesh.facets_origin[index]
+
+            T = trimesh.geometry.plane_transform(origin, normal)
+            vertices = trimesh.transform_points(obj_mesh.vertices, T)[:, :2]
+
+            # find boundary edges for the facet
+            edges = obj_mesh.edges_sorted.reshape((-1, 6))[obj_mesh.facets[index]].reshape((-1, 2))
+            group = trimesh.grouping.group_rows(edges, require_count=1)
+
+            # run the polygon conversion
+            polygon = trimesh.path.polygons.edges_to_polygons(edges=edges[group], vertices=vertices)
+
+            assert len(polygon) == 1
+
+            # erode to avoid object on edges
+            polygon[0] = polygon[0].buffer(-erosion_distance)
+
+            if not polygon[0].is_empty and polygon[0].area > min_area:
+                support_polygons.append(polygon[0])
+                support_polygons_T.append(trimesh.transformations.inverse_matrix(T))
+                obj_names.append(obj_name)
+
+        return support_polygons, support_polygons_T, obj_names
 
 
 class SceneRenderer:

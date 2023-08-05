@@ -39,3 +39,8 @@ class Benchmark:
 
     def _load_scene(self):
         pass
+
+    def render_axis(self, scene_mngr: SceneManager):
+        for o_name, _ in self.scene_mngr.scene.objs.items():
+            pose = scene_mngr.scene.objs[o_name].h_mat
+            scene_mngr.render.render_axis(pose)

@@ -69,7 +69,7 @@ class RearrangementAction(ActivityBase):
                 for logical_state in self.filter_logical_states
             ):
                 action_level_1 = self.get_action_level_1_for_single_object(
-                    obj_name=obj_name, scene_for_sample=scene_for_sample
+                    obj_name=obj_name, scene_for_sample=scene_for_sample, scene=scene
                 )
                 if not action_level_1:
                     continue
@@ -79,7 +79,10 @@ class RearrangementAction(ActivityBase):
                 yield action_level_1
 
     def get_action_level_1_for_single_object(
-        self, obj_name: str = None, scene_for_sample: Make_Scene = None
+        self,
+        obj_name: str = None,
+        scene_for_sample: Make_Scene = None,
+        scene: Scene = None,
     ) -> dict:
         """
         A function to get the possible actions for the desired object
@@ -91,16 +94,53 @@ class RearrangementAction(ActivityBase):
             action : Collision free actions
         """
         # return possible position
-
+        location = []
         # get_goal_location
-        goal_location, goal_sup_obj = self.get_goal_location(obj_name=obj_name)
+        if scene.bench_num == 0:
+            goal_location, goal_sup_obj = self.get_goal_location(obj_name=obj_name)
 
-        # sample_arbitrary_location
-        location = list(
-            self.get_arbitrary_location(obj_name, scene_for_sample, sample_num=self.n_sample)
-        )
-        if not (obj_name in self.scene_mngr.scene.rearranged_object):
-            location.append(goal_location)
+            # sample_arbitrary_location
+            location = list(
+                self.get_arbitrary_location(
+                    obj_name, scene_for_sample=scene_for_sample, sample_num=self.n_sample
+                )
+            )
+
+            if not (obj_name in self.scene_mngr.scene.rearranged_object):
+                location.append(goal_location)
+        elif scene.bench_num == 1:
+            for sup_obj_name, _ in scene.objs.items():
+                if "box" in sup_obj_name and "box" in obj_name:
+                    sup_obj_num = ord(sup_obj_name.split("_")[0])
+                    held_obj_num = ord(obj_name.split("_")[0])
+                    if held_obj_num < sup_obj_num:
+                        continue
+
+                if sup_obj_name == "table":
+                    location_table = list(
+                        self.get_arbitrary_location(
+                            obj_name,
+                            scene_for_sample=scene_for_sample,
+                            sample_num=self.n_sample,
+                        )
+                    )
+                    location.extend(location_table)
+                else:
+                    if scene.logical_state.support in scene.logical_states[sup_obj_name]:
+                        continue
+                    if sup_obj_name == obj_name:
+                        continue
+
+                    location_obj = list(
+                        self.get_arbitrary_location(
+                            obj_name,
+                            sup_obj_name,
+                            scene_for_sample=scene_for_sample,
+                            sample_num=self.n_sample,
+                        )
+                    )
+                    location.extend(location_obj)
+
         # print(f"first {obj_name} : ", location)
 
         if self.use_pick_action:
@@ -110,8 +150,9 @@ class RearrangementAction(ActivityBase):
             action = self.get_action(obj_name, release_poses_not_collision)
         else:
             obj_poses_not_collision = list(self.get_goal_location_not_collision(obj_name, location))
+            # print("Not collision ", obj_poses_not_collision)
             action = self.get_action_only_rearr(obj_name, obj_poses_not_collision)
-
+            # print("action : ", action)
         return action
 
     # for level wise - 1.5 (Consider gripper collision, when using contact_graspnet)
@@ -186,7 +227,11 @@ class RearrangementAction(ActivityBase):
         return goal_location, goal_sup_object
 
     def get_arbitrary_location(
-        self, obj_name: str, scene_for_sample: Make_Scene = None, sample_num: int = 0
+        self,
+        obj_name: str,
+        support_obj_name: str = None,
+        scene_for_sample: Make_Scene = None,
+        sample_num: int = 0,
     ) -> dict:
         """
         Sample arbitrary location how many you want
@@ -199,19 +244,39 @@ class RearrangementAction(ActivityBase):
             location : arbitrary location on the table
         """
         total_location = []
+
         for i in range(sample_num):
             location = {}
-            result, pose, sup_obj_name = scene_for_sample.find_object_placement(
-                self.scene_mngr.scene.objs[obj_name].gparam,
-                max_iter=100,
-                distance_above_support=0.002,
-                for_goal_scene=True,
-            )
+            if support_obj_name:
+                (
+                    result,
+                    pose,
+                    sup_obj_name,
+                ) = scene_for_sample.find_object_placement_from_specific_object(
+                    self.scene_mngr.scene.objs[obj_name].gparam,
+                    distance_above_support=0.0005,
+                    support_obj_name=support_obj_name,
+                    for_goal_scene=True,
+                )
+            else:
+                (
+                    result,
+                    pose,
+                    sup_obj_name,
+                ) = scene_for_sample.find_object_placement(
+                    self.scene_mngr.scene.objs[obj_name].gparam,
+                    max_iter=100,
+                    distance_above_support=0.0005,
+                    for_goal_scene=True,
+                )
             if result:
                 # 현재 rearr action은 Acronym으로 뽑는 방식임
                 # 만약 다른 object에 place하고 싶다면 그 object에서 sample point 뽑고
                 # point를 sup_obj의 h_mat 위치로 transformation 해주면 됨
-                pose = self.scene_mngr.table_pose.h_mat @ pose
+                if support_obj_name:
+                    pose = self.scene_mngr.scene.objs[support_obj_name].h_mat @ pose
+                else:
+                    pose = self.scene_mngr.scene.objs["table"].h_mat @ pose
                 location[sup_obj_name] = pose
                 yield location
 
@@ -328,6 +393,7 @@ class RearrangementAction(ActivityBase):
         post_release_pose = release_poses[self.move_data.MOVE_post_release]
         success_joint_path = True
 
+        # self.scene_mngr.set_object_pose(scene.rearr_obj_name, scene.rearr_obj_default_pose)
         self.scene_mngr.attach_object_on_gripper(scene.rearr_obj_name, True)
 
         pre_release_joint_path = self.get_rrt_star_path(default_thetas, pre_release_pose)
@@ -412,7 +478,15 @@ class RearrangementAction(ActivityBase):
         success_joint_path = True
 
         self.scene_mngr.set_robot_eef_pose(default_thetas)
-        self.scene_mngr.set_object_pose(scene.rearr_obj_name, scene.rearr_obj_default_pose)
+
+        if scene:
+            for name, obj in scene.objs.items():
+                if name == scene.rearr_obj_name:
+                    self.scene_mngr.set_object_pose(
+                        scene.rearr_obj_name, scene.rearr_obj_default_pose
+                    )
+                else:
+                    self.scene_mngr.set_object_pose(name, obj.h_mat)
 
         pre_grasp_joint_path = self.get_rrt_star_path(default_thetas, pre_grasp_pose)
         self.cost = 0
@@ -516,8 +590,8 @@ class RearrangementAction(ActivityBase):
                 next_scene.logical_states[held_obj_name][
                     next_scene.logical_state.on
                 ] = next_scene.objs[place_obj_name]
-                # Add gparam_center_mass for pointcloud sample
-                # TODO
+
+                next_scene.update_logical_states()
 
                 yield next_scene
 
@@ -526,15 +600,30 @@ class RearrangementAction(ActivityBase):
                 next_scene = deepcopy(scene)
                 next_scene.rearr_poses = deepcopy(rearr_pose)
                 next_scene.rearr_obj_default_pose = deepcopy(scene.objs[name].h_mat)
-                next_scene.rearr_obj_name = name
+                next_scene.rearr_obj_name = deepcopy(name)
+                # print(name, place_obj_name, next_scene.rearr_poses)
                 pose = next_scene.rearr_poses[place_obj_name]
 
                 next_scene.transform_from_cur_to_goal = c_T_w.dot(pose)
 
                 # Move object to goal location
                 next_scene.objs[name].h_mat = deepcopy(pose)
-                # Add gparam_center_mass for pointcloud sample
-                # TODO
+                # self.scene_mngr.obj_collision_mngr.set_transform(name, pose)
+
+                if next_scene.objs[name] in next_scene.logical_states[
+                    next_scene.logical_states[name].get(next_scene.logical_state.on).name
+                ].get(next_scene.logical_state.support):
+                    next_scene.logical_states[
+                        next_scene.logical_states[name].get(next_scene.logical_state.on).name
+                    ].get(next_scene.logical_state.support).remove(next_scene.objs[name])
+
+                next_scene.logical_states[name].clear()
+
+                next_scene.logical_states[next_scene.rearr_obj_name][
+                    next_scene.logical_state.on
+                ] = next_scene.objs[place_obj_name]
+                next_scene.update_logical_states()
+
                 yield next_scene
 
     def get_release_poses_not_collision(self, obj_name: str, location: list):
@@ -555,7 +644,7 @@ class RearrangementAction(ActivityBase):
                     goal_pose,
                 )
 
-                current_location = self.scene_mngr.scene.objs[obj_name].h_mat
+                current_location = deepcopy(self.scene_mngr.scene.objs[obj_name].h_mat)
                 release_poses = self.get_all_release_poses(eef_pose)
 
                 target_obj_and_current_location = {}
@@ -633,21 +722,24 @@ class RearrangementAction(ActivityBase):
             location : not collide with current scene.
 
         """
+        self.place_obj_names = []
         for i in location:
             for sup_obj_name, goal_pose in i.items():
                 is_collision = False
 
-                current_location = self.scene_mngr.scene.objs[obj_name].h_mat
+                current_location = deepcopy(self.scene_mngr.scene.objs[obj_name].h_mat)
                 self.scene_mngr.set_object_pose(obj_name, goal_pose)
                 result, _ = self.scene_mngr.obj_collision_mngr.in_collision_internal(
                     return_names=True
                 )
+                # print(result, _)
                 self.scene_mngr.set_object_pose(obj_name, current_location)
 
                 if result:
                     is_collision = True
                     # i[obj_name] = None
                 if not is_collision:
+                    self.place_obj_names.append(sup_obj_name)
                     yield i
 
     def get_all_release_poses(self, eef_pose):
@@ -681,7 +773,8 @@ class RearrangementAction(ActivityBase):
         action[self.info.REARR_OBJ_NAME] = obj_name
 
         if possible_action:
-            action[self.info.PLACE_OBJ_NAME] = list(possible_action[0][-1].keys())[0]
+            # action[self.info.PLACE_OBJ_NAME] = list(possible_action[0][-1].keys())[0]
+            action[self.info.PLACE_OBJ_NAME] = self.place_obj_names
         else:
             action[self.info.PLACE_OBJ_NAME] = list()
 
@@ -692,8 +785,9 @@ class RearrangementAction(ActivityBase):
         action = {}
         action[self.info.TYPE] = "rearr"
         action[self.info.REARR_OBJ_NAME] = obj_name
+        # print("Possible action : ", possible_action, len(possible_action))
         if possible_action:
-            action[self.info.PLACE_OBJ_NAME] = list(possible_action[-1].keys())[0]
+            action[self.info.PLACE_OBJ_NAME] = self.place_obj_names
         else:
             action[self.info.PLACE_OBJ_NAME] = list()
 

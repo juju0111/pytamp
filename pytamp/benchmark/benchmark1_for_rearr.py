@@ -3,9 +3,12 @@ from pykin.robots.single_arm import SingleArm
 from pykin.kinematics.transform import Transform
 from pykin.utils.mesh_utils import get_object_mesh
 from pytamp.benchmark.benchmark import Benchmark
+import easydict
+from pytamp.utils.making_scene_utils import load_mesh, get_obj_name, Make_Scene
+from copy import deepcopy
 
 
-class Benchmark1(Benchmark):
+class Benchmark1_for_rearr(Benchmark):
     def __init__(self, robot_name="panda", box_num=6, geom="visual", is_pyplot=True):
         # assert box_num <= 6, f"The number of boxes must be 6 or less."
         self.box_num = box_num
@@ -15,6 +18,7 @@ class Benchmark1(Benchmark):
         self._load_robot()
         self._load_objects()
         self._load_scene()
+        self.make_scene()
 
     def _load_robot(self):
         self.robot = SingleArm(
@@ -43,16 +47,16 @@ class Benchmark1(Benchmark):
     def _load_objects(self):
         self.table_mesh = get_object_mesh("ben_table.stl", scale=[1.0, 1.5, 1.0])
         # self.ceiling_mesh = get_object_mesh('ben_table_ceiling.stl')
-        self.tray_red_mesh = get_object_mesh("ben_tray_red.stl")
-        self.box_mesh = get_object_mesh("ben_cube.stl", 0.1)
+        self.tray_red_mesh = get_object_mesh("ben_tray_red.stl", 0.75)
+        self.box_mesh = get_object_mesh("ben_cube.stl", 0.05)
 
         box_height = self.box_mesh.bounds[1][2] - self.box_mesh.bounds[0][2]
         table_height = self.table_mesh.bounds[1][2] - self.table_mesh.bounds[0][2]
         self.table_pose = Transform(pos=np.array([1.0, -0.6, -self.table_mesh.bounds[0][2]]))
 
         self.box_poses = []
+        off_set = 0.073  # - 0.025
 
-        off_set = 0.073
         A_box_pose = Transform(
             pos=np.array([0.6, 0, table_height + abs(self.box_mesh.bounds[0][2]) + off_set])
         )
@@ -139,7 +143,7 @@ class Benchmark1(Benchmark):
         self.table_pose = Transform(pos=np.array([1.0, -0.6, 0.043]))
         # self.table_pose = Transform(pos=np.array([2.025, -0.4, -0.03]))
         self.ceiling_pose = Transform(pos=np.array([1.1, -0.4, 1.7]))
-        self.tray_red_pose = Transform(pos=np.array([0.7, -0.6, 0.805]))
+        self.tray_red_pose = Transform(pos=np.array([0.6, -0.5, 0.81]))
 
     def _load_scene(self):
         self.scene_mngr.add_object(
@@ -160,6 +164,8 @@ class Benchmark1(Benchmark):
             ("H_box", ("on", "table")),
         ]
 
+        self.init_logical_states = deepcopy(logical_states)
+
         # logical_states = [("A_box", ("on", "table")),
         #                   ("B_box", ("on", "table")),
         #                   ("C_box", ("on", "table")),
@@ -170,7 +176,7 @@ class Benchmark1(Benchmark):
         #                   ("H_box", ("on", "table")),]
         for i in range(self.box_num):
             box_name = self.scene_mngr.scene.alphabet_list[i] + "_box"
-            box_mesh = get_object_mesh("ben_cube.stl", 0.1)
+            box_mesh = get_object_mesh("ben_cube.stl", 0.05)
             self.scene_mngr.add_object(
                 name=box_name,
                 gtype="mesh",
@@ -185,9 +191,8 @@ class Benchmark1(Benchmark):
             gtype="mesh",
             gparam=self.tray_red_mesh,
             h_mat=self.tray_red_pose.h_mat,
-            color=[1.0, 0, 0],
+            color=[0.8, 0.01, 0],
         )
-
         # self.scene_mngr.obj_collision_mngr.remove_object("tray_red")
 
         self.scene_mngr.add_robot(self.robot, self.robot.init_qpos)
@@ -204,3 +209,42 @@ class Benchmark1(Benchmark):
         )
         self.scene_mngr.update_logical_states(is_init=True)
         self.scene_mngr.show_logical_states()
+
+    def make_scene(self):
+        obj_dict = {}
+        object_meshes = []
+        object_names = []
+        object_color = {}
+        support_meshes = []
+        support_names = []
+        object_poses = []
+        for i in range(self.box_num):
+            box_mesh = get_object_mesh("ben_cube.stl", 0.05)
+            object_meshes.append(box_mesh)
+            object_names.append(self.scene_mngr.scene.alphabet_list[i] + "_box")
+            support_meshes.append(box_mesh)
+            support_names.append(self.scene_mngr.scene.alphabet_list[i] + "_box_support")
+            object_color[self.scene_mngr.scene.alphabet_list[i] + "_box"] = self.box_colors[i]
+            sup_obj_name = self.init_logical_states[i][1][1]
+            object_poses.append(
+                self.box_poses[i].h_mat
+                @ np.linalg.inv(self.scene_mngr.scene.objs[sup_obj_name].h_mat)
+            )
+
+        # for PYTAMP
+        support_mesh = get_object_mesh("ben_table.stl", scale=[1.0, 1.5, 1.0])
+        support_meshes.append(support_mesh)
+        support_names.append("table")
+
+        support_meshes.append(self.tray_red_mesh)
+        support_names.append("tray_red_support")
+        # support_mesh = get_object_mesh("ben_table.stl", scale=[0.8, 1.0, 1.0])
+        self.init_scene = Make_Scene.static_arrangement(
+            # object_names, object_meshes, "table", support_mesh
+            object_names,
+            object_meshes,
+            object_poses,
+            support_names,
+            support_meshes,
+        )
+        self.init_scene.colorize(specific_objects=object_color)

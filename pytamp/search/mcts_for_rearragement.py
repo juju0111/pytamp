@@ -26,7 +26,7 @@ class MCTS_rearrangement:
     def __init__(
         self,
         scene_mngr: SceneManager,
-        init_scene: Make_Scene,
+        init_scene: Make_Scene = None,
         sampling_method: str = "uct",
         budgets: int = 500,
         c: float = 100000,
@@ -71,14 +71,17 @@ class MCTS_rearrangement:
 
         if bench_num == 1:
             self.pick_action = PickAction(scene_mngr, n_contacts=0, n_directions=1)
-            self.place_action = PlaceAction(
-                scene_mngr,
-                n_samples_held_obj=0,
-                n_samples_support_obj=0,
-                n_directions=1,
-                release_distance=0.02,
-                retreat_distance=0.15,
-            )
+            # self.place_action = PlaceAction(
+            #     scene_mngr,
+            #     n_samples_held_obj=0,
+            #     n_samples_support_obj=0,
+            #     n_directions=1,
+            #     release_distance=0.02,
+            #     retreat_distance=0.15,
+            # )
+            self.rearr_action = RearrangementAction(scene_mngr)
+            self.init_scene = init_scene
+
         # elif bench_num == 2:
         #     self.pick_action = PickAction(
         #         scene_mngr,
@@ -129,9 +132,9 @@ class MCTS_rearrangement:
             # when do appropriate placement
             self.goal_reward = 5
 
-        # if self.scene_mngr.scene.bench_num == 1:
-        #     self.infeasible_reward = -10
-        #     self.goal_reward = 5
+        if self.scene_mngr.scene.bench_num == 1:
+            self.infeasible_reward = -10
+            self.goal_reward = 5
 
         # if self.scene_mngr.scene.bench_num == 2:
         #     self.infeasible_reward = -5
@@ -280,9 +283,10 @@ class MCTS_rearrangement:
                     print("Add level_1_node!")
 
                     level_2 = True
-                    for i in success_level_1_sub_nodes:
-                        if not self.tree.nodes[i]["level2"]:
-                            level_2 = False
+                    for i, n in enumerate(success_level_1_sub_nodes):
+                        if i % 2 == 1:
+                            if not self.tree.nodes[success_level_1_sub_nodes[i + 1]].get("joints"):
+                                level_2 = False
                     if level_2:
                         self.history_level_2_dict[len(self.history_level_2_dict)] = dict(
                             nodes=success_level_1_sub_nodes,
@@ -356,7 +360,7 @@ class MCTS_rearrangement:
             #     )
             if cur_logical_action[self.rearr_action.info.TYPE] == "rearr":
                 print(
-                    f"{sc.COLOR_BROWN}[Action]{sc.ENDC} {sc.OKGREEN}Rearr {cur_logical_action[self.rearr_action.info.REARR_OBJ_NAME]}{sc.ENDC}"
+                    f"{sc.COLOR_BROWN}[Action]{sc.ENDC} {sc.OKGREEN}Rearr {cur_logical_action[self.rearr_action.info.REARR_OBJ_NAME]} to {cur_logical_action[self.rearr_action.info.PLACE_OBJ_NAME]}{sc.ENDC}"
                 )
 
             # ? Select Next State
@@ -439,8 +443,8 @@ class MCTS_rearrangement:
                         current_node=current_node,
                     )
 
-                if len(grasps) > 5:
-                    random_list = np.random.choice(len(grasps), 5, replace=False)
+                if len(grasps) > 8:
+                    random_list = np.random.choice(len(grasps), 8, replace=False)
                     grasps = grasps[random_list]
 
                 current_node[self.rearr_action.info.GRASP_SET] = deepcopy(grasps)
@@ -612,11 +616,13 @@ class MCTS_rearrangement:
                 self.tree.add_edge(cur_state_node, action_node)
 
             if possible_action[self.rearr_action.info.TYPE] == "rearr":
-                for action in possible_action[self.rearr_action.info.REARR_POSES]:
+                for i, action in enumerate(possible_action[self.rearr_action.info.REARR_POSES]):
                     action_ = deepcopy(possible_action)
                     action_[self.rearr_action.info.REARR_POSES] = list()
                     action_[self.rearr_action.info.REARR_POSES].append(action)
-
+                    action_[self.rearr_action.info.PLACE_OBJ_NAME] = possible_action[
+                        self.rearr_action.info.PLACE_OBJ_NAME
+                    ][i]
                     action_node = self.tree.number_of_nodes()
                     self.tree.add_node(action_node)
                     self.tree.update(
@@ -826,7 +832,7 @@ class MCTS_rearrangement:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 10
 
         elif self.scene_mngr.scene.bench_num == 1:
-            inf_reward = self.infeasible_reward / (max(1, depth)) * 10
+            inf_reward = self.infeasible_reward / (max(1, depth)) * 5
 
         elif self.scene_mngr.scene.bench_num == 2:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 2
@@ -889,16 +895,26 @@ class MCTS_rearrangement:
             prev_stacked_box_num = cur_state.success_stacked_box_num
             next_state_is_success = next_state.check_success_stacked_bench_1()
             # Good action if placed well in alphabetical order
-            if logical_action_type == "place":
+
+            if self.use_pick_action:
+                if logical_action_type == "rearr":
+                    if next_state_is_success:
+                        if next_state.stacked_box_num - prev_stacked_box_num == 1:
+                            print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
+                            return abs(reward) * 1 / (depth + 1) * 10
+                # repicking object on top of goal_tray is bad
+                if logical_action_type == "pick":
+                    if next_state.stacked_box_num - prev_stacked_box_num == -1:
+                        print(f"{sc.FAIL}Bad Action{sc.ENDC}")
+                        return max(reward * 1 / (depth + 1) * 20, self.infeasible_reward)
+            else:
                 if next_state_is_success:
                     if next_state.stacked_box_num - prev_stacked_box_num == 1:
                         print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                        return abs(reward) * 1 / (depth + 1) * 20
-            # repicking object on top of goal_tray is bad
-            if logical_action_type == "pick":
+                        return abs(reward) * 1 / (depth + 1) * 10
                 if next_state.stacked_box_num - prev_stacked_box_num == -1:
                     print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                    return max(reward * 1 / (depth + 1) * 40, self.infeasible_reward)
+                    return max(reward * 1 / (depth + 1) * 20, self.infeasible_reward)
 
         # if self.scene_mngr.scene.bench_num == 2:
         #     logical_action_type = cur_logical_action[self.pick_action.info.TYPE]
@@ -1027,7 +1043,7 @@ class MCTS_rearrangement:
                 # next_scene
                 pick_scene: Scene = self.tree.nodes[sub_optimal_node]["state"]
                 print(f"{sc.COLOR_YELLOW}pick {pick_scene.rearr_obj_name}{sc.ENDC}")
-
+                # print("Grasp_Pose :", action)
                 if not init_thetas:
                     init_theta = self.rearr_action.scene_mngr.scene.robot.init_qpos
 
@@ -1042,6 +1058,7 @@ class MCTS_rearrangement:
                         self.rearr_action.move_data.MOVE_post_grasp
                     ],
                 }
+
                 release_poses = {
                     self.rearr_action.move_data.MOVE_release: action[
                         self.rearr_action.move_data.MOVE_release

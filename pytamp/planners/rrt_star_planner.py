@@ -201,7 +201,7 @@ class RRTStarPlanner(Planner):
                             parent_node = [node for node in self.tree.predecessors(near_node)][0]
                             self.tree.remove_edge(parent_node, near_node)
                             self.tree.add_edge(new_node, near_node)
-                            print("rewire")
+                            # print("rewire")
 
                     if self._reach_to_goal(q_new):
                         self.goal_node = new_node
