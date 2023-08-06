@@ -199,7 +199,7 @@ def make_scene():
     obj_dict = {}
     object_meshes = []
     object_names = []
-    support_meshs = []
+    support_meshes = []
     support_names = []
     for o in args.objects:
         if ".h5" in o:
@@ -215,12 +215,12 @@ def make_scene():
 
     # for PYTAMP
     support_mesh = get_object_mesh("ben_table.stl", scale=[1.0, 1.5, 1.0])
-    support_meshs.append(support_mesh)
+    support_meshes.append(support_mesh)
     support_names.append("table")
 
     # # test >> place upon other object except table
     # support_mesh = get_object_mesh("ben_cube.stl", 0.05)
-    # support_meshs.append(support_mesh)
+    # support_meshes.append(support_mesh)
     # object_meshes.append(support_mesh)
     # support_names.append("ben_cube_support")
     # object_names.append("ben_cube_support")
@@ -231,7 +231,7 @@ def make_scene():
         object_names,
         object_meshes,
         support_names,
-        support_meshs,
+        support_meshes,
         # for_goal_scene=False,
         for_goal_scene=True,
         gaussian=[-0.1, 0, 0.15, 0.2],
@@ -240,7 +240,7 @@ def make_scene():
         object_names,
         object_meshes,
         support_names,
-        support_meshs,
+        support_meshes,
         for_goal_scene=True,
         gaussian=[-0.2, 0, 0.1, 0.2],
     )

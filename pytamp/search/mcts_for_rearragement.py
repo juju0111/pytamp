@@ -36,6 +36,7 @@ class MCTS_rearrangement:
         use_pick_action=False,
         consider_next_scene=True,
         do_level_2=True,
+        grasp_use_num: int = 5,
     ):
         self.node_data = NodeData
         self.scene_mngr = scene_mngr
@@ -44,7 +45,7 @@ class MCTS_rearrangement:
         self.use_pick_action = use_pick_action
         self.consider_next_scene = consider_next_scene
         self._do_level_2 = do_level_2
-
+        self.grasp_use_num = grasp_use_num
         self.prev_rearr_obj_num = 0
         self.next_rearr_obj_num = 0
 
@@ -82,38 +83,46 @@ class MCTS_rearrangement:
             self.rearr_action = RearrangementAction(scene_mngr)
             self.init_scene = init_scene
 
-        # elif bench_num == 2:
-        #     self.pick_action = PickAction(
-        #         scene_mngr,
-        #         n_contacts=0,
-        #         limit_angle_for_force_closure=0.02,
-        #         n_directions=3,
-        #     )
-        #     self.place_action = PlaceAction(
-        #         scene_mngr, n_samples_held_obj=0, n_samples_support_obj=10
-        #     )
-        # elif bench_num == 3:
-        #     self.pick_action = PickAction(
-        #         scene_mngr, n_contacts=0, n_directions=3, retreat_distance=0.15
-        #     )
-        #     self.place_action = PlaceAction(
-        #         scene_mngr,
-        #         n_samples_held_obj=0,
-        #         n_samples_support_obj=0,
-        #         retreat_distance=0.2,
-        #         n_directions=3,
-        #     )
-        # elif bench_num == 4:
-        #     self.pick_action = PickAction(
-        #         scene_mngr, n_contacts=0, n_directions=0, retreat_distance=0.15
-        #     )
-        #     self.place_action = PlaceAction(
-        #         scene_mngr,
-        #         n_samples_held_obj=0,
-        #         n_samples_support_obj=0,
-        #         retreat_distance=0.2,
-        #         n_directions=3,
-        #     )
+        elif bench_num == 2:
+            self.pick_action = PickAction(
+                scene_mngr,
+                n_contacts=0,
+                limit_angle_for_force_closure=0.02,
+                n_directions=3,
+            )
+            # self.place_action = PlaceAction(
+            #     scene_mngr, n_samples_he
+            #     ld_obj=0, n_samples_support_obj=10
+            # )
+            self.rearr_action = RearrangementAction(scene_mngr, retreat_distance=0.025)
+            self.init_scene = init_scene
+        elif bench_num == 3:
+            self.pick_action = PickAction(
+                scene_mngr, n_contacts=0, n_directions=3, retreat_distance=0.15
+            )
+            # self.place_action = PlaceAction(
+            #     scene_mngr,
+            #     n_samples_held_obj=0,
+            #     n_samples_support_obj=0,
+            #     retreat_distance=0.2,
+            #     n_directions=3,
+            # )
+            self.rearr_action = RearrangementAction(scene_mngr)
+            self.init_scene = init_scene
+
+        elif bench_num == 4:
+            self.pick_action = PickAction(
+                scene_mngr, n_contacts=0, n_directions=0, retreat_distance=0.15
+            )
+            self.place_action = PlaceAction(
+                scene_mngr,
+                n_samples_held_obj=0,
+                n_samples_support_obj=0,
+                retreat_distance=0.2,
+                n_directions=3,
+            )
+            self.rearr_action = RearrangementAction(scene_mngr)
+            self.init_scene = None
 
         self._sampling_method = sampling_method
         self._budgets = budgets
@@ -136,13 +145,13 @@ class MCTS_rearrangement:
             self.infeasible_reward = -10
             self.goal_reward = 5
 
-        # if self.scene_mngr.scene.bench_num == 2:
-        #     self.infeasible_reward = -5
-        #     self.goal_reward = 5
+        if self.scene_mngr.scene.bench_num == 2:
+            self.infeasible_reward = -5
+            self.goal_reward = 5
 
-        # if self.scene_mngr.scene.bench_num == 3:
-        #     self.infeasible_reward = -5
-        #     self.goal_reward = 10
+        if self.scene_mngr.scene.bench_num == 3:
+            self.infeasible_reward = -5
+            self.goal_reward = 10
 
         # if self.scene_mngr.scene.bench_num == 4:
         #     self.infeasible_reward = -5
@@ -164,7 +173,11 @@ class MCTS_rearrangement:
         self.only_optimize_1 = False
         self.has_aleardy_level_1_optimal_nodes = False
         if not use_pick_action:
-            self.grasp_generator = Grasp_Using_Contact_GraspNet(self.rearr_action)
+            self.grasp_generator = Grasp_Using_Contact_GraspNet(
+                self.rearr_action,
+                scene_mngr.scene.robot.robot_name,
+                self.scene_mngr.scene.bench_num,
+            )
 
     def _create_tree(self, state: Scene):
         tree = nx.DiGraph()
@@ -429,7 +442,7 @@ class MCTS_rearrangement:
 
             print(f"{sc.COLOR_BROWN}{obj_to_manipulate}{sc.ENDC}")
             chance_ = 3
-
+            grasp_poses_not_collision = None
             for _ in range(3):
                 if use_next_scene:
                     grasps = self.grasp_generator.get_grasp(
@@ -443,22 +456,23 @@ class MCTS_rearrangement:
                         current_node=current_node,
                     )
 
-                if len(grasps) > 8:
-                    random_list = np.random.choice(len(grasps), 8, replace=False)
+                if len(grasps) > self.grasp_use_num:
+                    random_list = np.random.choice(len(grasps), self.grasp_use_num, replace=False)
                     grasps = grasps[random_list]
 
-                current_node[self.rearr_action.info.GRASP_SET] = deepcopy(grasps)
-
-                if len(grasps) >= 1:
-                    # update next node's grasp_pose
+                if len(grasps):
                     grasp_poses_not_collision = self.rearr_action.get_all_grasp_poses_not_collision(
                         grasps
                     )
 
-                    if not grasp_poses_not_collision:
-                        current_node[NodeData.LEVEL1_5] = False
-                        next_node[NodeData.LEVEL1_5] = False
-                        break
+                current_node[self.rearr_action.info.GRASP_SET] = deepcopy(grasps)
+                if not grasp_poses_not_collision:
+                    current_node[NodeData.LEVEL1_5] = False
+                    next_node[NodeData.LEVEL1_5] = False
+
+                if grasp_poses_not_collision is not None:
+                    # update next node's grasp_pose
+
                     current_node[self.rearr_action.info.GRASP_POSES] = grasp_poses_not_collision
                     g_ = random.sample(grasp_poses_not_collision, 1)
                     # print("g_ : ", g_)
@@ -499,6 +513,15 @@ class MCTS_rearrangement:
                     current_node[NodeData.LEVEL1_5] = False
                     next_node[NodeData.LEVEL1_5] = False
             if chance_ == 0:
+                self.tree.nodes[sub_optimal_nodes[2 * i]][NodeData.VALUE] = -current_node.get(
+                    NodeData.VALUE
+                )
+                self.tree.nodes[sub_optimal_nodes[2 * i + 1]][NodeData.VALUE] = -current_node.get(
+                    NodeData.VALUE
+                )
+                self.tree.nodes[sub_optimal_nodes[2 * i + 2]][NodeData.VALUE] = -next_node.get(
+                    NodeData.VALUE
+                )
                 self.infeasible_sub_nodes.append(sub_optimal_nodes)
             #     # break
 
@@ -822,7 +845,7 @@ class MCTS_rearrangement:
         depth=None,
         is_terminal: bool = False,
     ) -> float:
-        reward = -.1
+        reward = -0.1
         if is_terminal:
             print(f"Terminal State! Reward is {self.goal_reward}")
             return self.goal_reward
@@ -832,7 +855,7 @@ class MCTS_rearrangement:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 10
 
         elif self.scene_mngr.scene.bench_num == 1:
-            inf_reward = self.infeasible_reward / (max(1, depth)) * 5
+            inf_reward = self.infeasible_reward / (max(1, depth)) * 2
 
         elif self.scene_mngr.scene.bench_num == 2:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 2
@@ -1022,6 +1045,8 @@ class MCTS_rearrangement:
 
         init_thetas = []
         success_pick = False
+        success_place = False
+
         place_scene = None
 
         for sub_optimal_node in sub_optimal_nodes:
@@ -1037,6 +1062,8 @@ class MCTS_rearrangement:
                 continue
 
             success_place = False
+            success_pick = False
+
             action: dict = self.tree.nodes[sub_optimal_node].get(NodeData.ACTION)
 
             if action:
@@ -1116,15 +1143,15 @@ class MCTS_rearrangement:
                     self.tree.nodes[parent_node][NodeData.LEVEL2] = True
                     self.tree.nodes[0][NodeData.LEVEL2] = True
 
-                    if success_pick and success_place:
-                        self.tree.nodes[sub_optimal_node][NodeData.TEST] = (
+                    # if success_pick and success_place:
+                    self.tree.nodes[sub_optimal_node][NodeData.TEST] = deepcopy(
+                        (
                             pick_scene.rearr_obj_name,
                             pick_scene.objs[pick_scene.rearr_obj_name].h_mat,
                         )
-                        print("Success pnp")
-                    else:
-                        print("PNP Fail")
-                        break
+                    )
+                    print("Success pnp")
+
                 else:
                     print("Place joint Fail")
                     success_pick = False
@@ -1233,9 +1260,11 @@ class MCTS_rearrangement:
                         self.tree.nodes[0][NodeData.LEVEL2] = True
 
                         if success_pick and success_place:
-                            self.tree.nodes[sub_optimal_node][NodeData.TEST] = (
-                                pick_scene.robot.gripper.attached_obj_name,
-                                place_scene.objs[place_scene.pick_obj_name].h_mat,
+                            self.tree.nodes[sub_optimal_node][NodeData.TEST] = deepcopy(
+                                (
+                                    pick_scene.robot.gripper.attached_obj_name,
+                                    place_scene.objs[place_scene.pick_obj_name].h_mat,
+                                )
                             )
                             print("Success pnp")
                         else:
@@ -1441,7 +1470,7 @@ class MCTS_rearrangement:
         place_object_poses = []
 
         pick_joint_path = []
-        for node in nodes:
+        for idx, node in enumerate(nodes):
             node_type = "action" if self.tree.nodes[node]["type"] == NodeData.ACTION else "state"
             if node_type == NodeData.ACTION:
                 continue

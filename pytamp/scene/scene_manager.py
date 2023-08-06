@@ -654,9 +654,14 @@ class SceneManager:
                 )
             else:
                 self.render.render_robot(robot=self._scene.robot, geom=self.geom)
-                self.render.trimesh_scene.set_camera(
-                    angles=(1.2, 0, 0.6), distance=2, center=(0.5, 0, 1)
-                )
+                if self.scene.bench_num == 2:
+                    self.render.trimesh_scene.set_camera(
+                        angles=(1.2, 0, 0.6 - np.pi / 2), distance=2.5, center=(0.5, 0, 1)
+                    )
+                else:
+                    self.render.trimesh_scene.set_camera(
+                        angles=(1.2, 0, 0.6), distance=2, center=(0.5, 0, 1)
+                    )
                 img = self.render.get_scene_img(True)
                 # print(i ,"render")
                 self.render.trimesh_scene = None
@@ -693,6 +698,7 @@ class SceneManager:
 
         if is_save:
             import os
+
             os.chdir("/home/juju/pytamp/examples/doosan/action/rearrangement1/movie_dir")
             print("PWD : ", os.getcwd())
             if gif:

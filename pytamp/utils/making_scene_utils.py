@@ -42,9 +42,11 @@ class Make_Scene(Scene_ACRONYM):
         object_meshes,
         support_names,
         support_meshes,
+        base_mesh="table",
         distance_above_support=0.002,
         gaussian=None,
         for_goal_scene=False,
+        use_distance_limit=True,
     ):
         """Generate a random scene by arranging all object meshes on any support surface of a provided support mesh.
 
@@ -69,6 +71,8 @@ class Make_Scene(Scene_ACRONYM):
                 distance_above_support=distance_above_support,
                 gaussian=gaussian,
                 for_goal_scene=for_goal_scene,
+                base_mesh=base_mesh,
+                use_distance_limit=use_distance_limit,
             )
         return s
 
@@ -144,6 +148,8 @@ class Make_Scene(Scene_ACRONYM):
         support_obj_name=None,
         gaussian=None,
         for_goal_scene=False,
+        use_distance_limit=True,
+        erosion_dist=0.015,
     ):
         """Try to find a non-colliding stable pose on top of any support surface.
 
@@ -162,7 +168,9 @@ class Make_Scene(Scene_ACRONYM):
             np.ndarray: Homogenous 4x4 matrix describing the object placement pose. Or None if none was found.
         """
 
-        support_polys, support_T, sup_obj_names = self._get_specific_support_polygons("table")
+        support_polys, support_T, sup_obj_names = self._get_specific_support_polygons(
+            support_obj_name, erosion_distance=erosion_dist
+        )
         if len(support_polys) == 0:
             raise RuntimeError("No support polygons found!")
         # get stable poses for object
@@ -172,10 +180,13 @@ class Make_Scene(Scene_ACRONYM):
             threshold=0, sigma=0, n_samples=1
         )
         # stable_poses, stable_poses_probs = obj_mesh.compute_stable_poses(threshold=0, sigma=0, n_samples=1)
-
+        # print(support_obj_name)
         # Sample support index
-        support_index = max(enumerate(support_polys), key=lambda x: x[1].area)[0]
-
+        if support_obj_name == "table":
+            support_index = max(enumerate(support_polys), key=lambda x: x[1].area)[0]
+        elif support_obj_name == "shelves":
+            support_index = 7
+            # support_index = max(enumerate(support_polys), key=lambda x: x[1].area)[0]
         iter = 0
         colliding = True
         while iter < max_iter and colliding:
@@ -195,8 +206,9 @@ class Make_Scene(Scene_ACRONYM):
                         )
                     )
                     # print("sampled distance : ", ((-p.x - .9)**2 + (p.y + 0.6)**2) )
-                    if ((-p.x - 1.0) ** 2 + (p.y + 0.6) ** 2) > 0.8:
-                        continue
+                    if use_distance_limit:
+                        if ((-p.x - 1.0) ** 2 + (p.y + 0.6) ** 2) > 0.7:
+                            continue
                     if p.within(support_polys[support_index]):
                         pts = [p.x, p.y]
                         break
@@ -206,7 +218,10 @@ class Make_Scene(Scene_ACRONYM):
 
                     # for robot arm reach
                     # print(pts)
-                    if ((-pts[0][0] - 1.0) ** 2 + (pts[0][1] + 0.6) ** 2) < 0.4:
+                    if use_distance_limit:
+                        if ((-pts[0][0] - 1.0) ** 2 + (pts[0][1] + 0.6) ** 2) < 0.4:
+                            break
+                    else:
                         break
 
             # To avoid collisions with the support surface
@@ -244,6 +259,8 @@ class Make_Scene(Scene_ACRONYM):
         distance_above_support=0.0,
         gaussian=None,
         for_goal_scene=False,
+        base_mesh="table",
+        use_distance_limit=True,
     ):
         """Add object and place it in a non-colliding stable pose on top of any support surface.
 
@@ -261,9 +278,10 @@ class Make_Scene(Scene_ACRONYM):
             obj_mesh,
             max_iter,
             distance_above_support=distance_above_support,
-            support_obj_name="table",
+            support_obj_name=base_mesh,
             gaussian=gaussian,
             for_goal_scene=for_goal_scene,
+            use_distance_limit=use_distance_limit,
         )
 
         if success:
@@ -279,6 +297,7 @@ class Make_Scene(Scene_ACRONYM):
         distance_above_support,
         support_obj_name,
         for_goal_scene=False,
+        erosion_dist=0.015,
     ):
         """Try to find a non-colliding stable pose on top of any support surface.
 
@@ -297,7 +316,7 @@ class Make_Scene(Scene_ACRONYM):
             np.ndarray: Homogenous 4x4 matrix describing the object placement pose. Or None if none was found.
         """
         support_polys, support_T, sup_obj_names = self._get_specific_support_polygons(
-            support_obj_name
+            support_obj_name, erosion_distance=erosion_dist
         )
 
         if len(support_polys) == 0:
@@ -463,8 +482,8 @@ class Make_Scene(Scene_ACRONYM):
         # Add support plane if it is set (although not infinite)
         obj_name = support_obj_name
         # print("object_name : ", obj_name)
-
-        if support_obj_name == "table":
+        # print("specific sup name :", support_obj_name, self._support_objects)
+        if support_obj_name in self._support_objects:
             obj_mesh = self._support_objects.get(support_obj_name)
         else:
             obj_mesh = self._support_objects.get(support_obj_name + "_support")
@@ -652,6 +671,9 @@ def load_mesh(filename, mesh_root_dir, scale=None):
         data = h5py.File(filename, "r")
         mesh_fname = data["object/file"][()].decode("utf-8")
         mesh_scale = data["object/scale"][()] if scale is None else scale
+    elif filename.endswith(".obj"):
+        print("Enter without root address")
+        pass
     else:
         raise RuntimeError("Unknown file ending:", filename)
 

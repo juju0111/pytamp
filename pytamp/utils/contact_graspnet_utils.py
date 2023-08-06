@@ -13,7 +13,7 @@ from pytamp.utils.point_cloud_utils import get_support_space_point_cloud
 
 
 class Grasp_Using_Contact_GraspNet:
-    def __init__(self, action):
+    def __init__(self, action, robot_name, bench_num=0):
         tf.disable_eager_execution()
         physical_devices = tf.config.list_physical_devices("GPU")
 
@@ -44,7 +44,7 @@ class Grasp_Using_Contact_GraspNet:
         )
 
         self.grasp_estimator = GraspEstimator(self.global_config)
-        self.grasp_estimator.build_network()
+        self.grasp_estimator.build_network(robot_name)
 
         # Add ops to save and restore all the variables.
         self.saver = tf.train.Saver(save_relative_paths=True)
@@ -63,6 +63,35 @@ class Grasp_Using_Contact_GraspNet:
             home_path
             + "/contact_graspnet/checkpoints/scene_test_2048_bs3_hor_sigma_001/model.ckpt-144144",
         )
+        self.bench_num = bench_num
+        if bench_num < 2:
+            self.T_cam = np.array(
+                [
+                    [6.12323400e-17, -8.66025404e-01, 5.00000000e-01, 1.60000008e-01],
+                    [1.00000000e00, 5.30287619e-17, -3.06161700e-17, 6.34369494e-01],
+                    [-0.00000000e00, 5.00000000e-01, 8.66025404e-01, 1.43132538e00],
+                    [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
+                ]
+            )
+
+        if bench_num == 2:
+            self.T_cam = np.array(
+                [
+                    [1.0, 0.0, 0.0, 1.46763353],
+                    [0.0, -0.09983342, -0.99500417, -0.42326634],
+                    [-0.0, 0.99500417, -0.09983342, 0.83645545],
+                    [0.0, 0.0, 0.0, 1.0],
+                ]
+            )
+        if bench_num == 3:
+            self.T_cam = np.array(
+                [
+                    [6.12323400e-17, 8.66025404e-01, -5.00000000e-01, -8.39999992e-01],
+                    [-1.00000000e00, 5.30287619e-17, -3.06161700e-17, 8.34369494e-01],
+                    [-0.00000000e00, 5.00000000e-01, 8.66025404e-01, 1.43132538e00],
+                    [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
+                ]
+            )
 
     def argparse(self):
         parser = argparse.ArgumentParser()
@@ -174,21 +203,22 @@ class Grasp_Using_Contact_GraspNet:
         """
         self.visualize_grasps(pc, pred_grasps, scores, plot_opencv_cam=True, pc_colors=pc_colors)
 
-    def get_pc_from_camera_point_of_view(self, all_pc, pc_segments, obj_to_manipulate, T_cam=None):
+    def get_pc_from_camera_point_of_view(
+        self,
+        all_pc,
+        pc_segments,
+        obj_to_manipulate,
+        T_cam=None,
+    ):
         if T_cam == None:
-            self.T_cam = np.array(
-                [
-                    [6.12323400e-17, -8.66025404e-01, 5.00000000e-01, 1.60000008e-01],
-                    [1.00000000e00, 5.30287619e-17, -3.06161700e-17, 6.34369494e-01],
-                    [-0.00000000e00, 5.00000000e-01, 8.66025404e-01, 1.43132538e00],
-                    [0.00000000e00, 0.00000000e00, 0.00000000e00, 1.00000000e00],
-                ]
-            )
-        else:
-            self.T_cam = T_cam
-        assert self.T_cam.shape == (4, 4), "cam_transformation shape must be (4,4)"
+            T_cam = self.T_cam
 
-        w_T_cam = self.action.scene_mngr.scene.objs["table"].h_mat @ self.T_cam
+        assert T_cam.shape == (4, 4), "cam_transformation shape must be (4,4)"
+
+        try:
+            w_T_cam = self.action.scene_mngr.scene.objs["table"].h_mat @ T_cam
+        except:
+            w_T_cam = self.action.scene_mngr.scene.objs["shelves"].h_mat @ T_cam
         m_ = np.array(
             [
                 [1.0, 0.0, 0.0, 0.0],
@@ -243,15 +273,10 @@ class Grasp_Using_Contact_GraspNet:
         )
         # print("Collision free grasps step 1 : ", collision_free_grasps.shape)
 
-        if not len(collision_free_grasps):
+        if not len(collision_free_grasps) or self.bench_num == 2:
             pred_grasps_world_augment[obj_to_manipulate] = (
                 self.w_T_cam @ pred_grasps_cam[obj_to_manipulate]
             )
-            # print(
-            #     "Augment 1 _z axis 90' rotation ",
-            #     pred_grasps_world_augment[obj_to_manipulate].shape,
-            #     pred_grasps_world[obj_to_manipulate].shape,
-            # )
 
             collision_free_grasps = collision_check_using_contact_graspnet(
                 pred_grasps_world_augment[obj_to_manipulate]
@@ -259,7 +284,7 @@ class Grasp_Using_Contact_GraspNet:
             # print("Collision free grasps step 2 : ", collision_free_grasps.shape)
 
         augmented_grasps = []
-        if not len(collision_free_grasps):
+        if not len(collision_free_grasps) or self.bench_num == 2:
             pred_grasps_world_augment[obj_to_manipulate] = np.vstack(
                 [pred_grasps_world_augment[obj_to_manipulate], pred_grasps_world[obj_to_manipulate]]
             )
@@ -273,7 +298,7 @@ class Grasp_Using_Contact_GraspNet:
                             tcp_pose_
                         )
                     )
-                    self.action.scene_mngr.set_gripper_pose(eef_pose_)
+                    # self.action.scene_mngr.set_gripper_pose(eef_pose_)
                     augmented_grasps.append(eef_pose_)
 
         if augmented_grasps:
@@ -299,6 +324,10 @@ class Grasp_Using_Contact_GraspNet:
     ):
         obj_to_manipulate = current_node["action"]["rearr_obj_name"]
 
+        if self.bench_num == 2:
+            min_size = 0.6
+        else:
+            min_size = 0.4
         if next_node != None:
             self.action.get_mixed_scene_on_current(
                 next_scene=next_node["state"],
@@ -325,7 +354,7 @@ class Grasp_Using_Contact_GraspNet:
         )
 
         pc_region_ = self.get_region_to_manipulate(
-            cam_pc[:, :3], pc_segments, min_size=0.4, obj_name=obj_to_manipulate
+            cam_pc[:, :3], pc_segments, min_size=min_size, obj_name=obj_to_manipulate
         )
 
         pred_grasps_cam, s_, c_, g_o_ = {}, {}, {}, {}

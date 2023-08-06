@@ -5,3 +5,5 @@ from .benchmark3 import Benchmark3
 from .benchmark4 import Benchmark4
 from .rearrange1 import Rearrange1
 from .benchmark1_for_rearr import Benchmark1_for_rearr
+from .benchmark2_for_rearr import Benchmark2_for_rearr
+from .benchmark3_for_rearr import Benchmark3_for_rearr

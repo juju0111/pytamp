@@ -65,9 +65,7 @@ class Scene:
         if obj_names:
             self.goal_objects = obj_names
             for i in obj_names:
-                self.goal_object_poses[i] = self.benchmark_config[self.bench_num][
-                    "goal_scene"
-                ][i]
+                self.goal_object_poses[i] = self.benchmark_config[self.bench_num]["goal_scene"][i]
         self.goal_object_num = len(obj_names)
         self.rearranged_object = []
         self.pre_defined_min_distance = 1e-4
@@ -130,21 +128,15 @@ class Scene:
                                 self.objs[object_name]
                             )
                 else:
-                    if not self.logical_states[logical_state[State.on].name].get(
-                        State.support
-                    ):
-                        self.logical_states[logical_state[State.on].name][
-                            State.support
-                        ] = []
+                    if not self.logical_states[logical_state[State.on].name].get(State.support):
+                        self.logical_states[logical_state[State.on].name][State.support] = []
 
                     if self.objs[object_name] not in list(
-                        self.logical_states[logical_state[State.on].name].get(
-                            State.support
-                        )
+                        self.logical_states[logical_state[State.on].name].get(State.support)
                     ):
-                        self.logical_states[logical_state[State.on].name][
-                            State.support
-                        ].append(self.objs[object_name])
+                        self.logical_states[logical_state[State.on].name][State.support].append(
+                            self.objs[object_name]
+                        )
 
             if logical_state.get(State.support) is not None and not logical_state.get(
                 State.support
@@ -153,31 +145,21 @@ class Scene:
 
             if self.bench_num == 4:
                 if logical_state.get(State.hang):
-                    if not self.logical_states[logical_state[State.hang].name].get(
-                        State.hung
-                    ):
-                        self.logical_states[logical_state[State.hang].name][
-                            State.hung
-                        ] = []
+                    if not self.logical_states[logical_state[State.hang].name].get(State.hung):
+                        self.logical_states[logical_state[State.hang].name][State.hung] = []
 
                     if self.objs[object_name] not in list(
-                        self.logical_states[logical_state[State.hang].name].get(
-                            State.hung
-                        )
+                        self.logical_states[logical_state[State.hang].name].get(State.hung)
                     ):
-                        self.logical_states[logical_state[State.hang].name][
-                            State.hung
-                        ].append(self.objs[object_name])
+                        self.logical_states[logical_state[State.hang].name][State.hung].append(
+                            self.objs[object_name]
+                        )
 
-                if logical_state.get(State.hung) is not None and not logical_state.get(
-                    State.hung
-                ):
+                if logical_state.get(State.hung) is not None and not logical_state.get(State.hung):
                     self.logical_states[object_name].pop(State.hung)
 
             if logical_state.get(State.holding):
-                self.logical_states[logical_state[State.holding].name][
-                    State.held
-                ] = True
+                self.logical_states[logical_state[State.holding].name][State.held] = True
 
     # Add for MCTS
     def is_terminal_state(self):
@@ -255,9 +237,7 @@ class Scene:
         return is_success
 
     def get_objs_chain_list_from_bottom(self, bottom_obj):
-        support_objs: list = self.logical_states[bottom_obj].get(
-            self.logical_state.support
-        )
+        support_objs: list = self.logical_states[bottom_obj].get(self.logical_state.support)
         if not support_objs:
             return [bottom_obj]
         else:
@@ -267,6 +247,8 @@ class Scene:
     def check_terminal_state_bench_2(self):
         is_success = False
         if self.robot.gripper.attached_obj_name == self.goal_object:
+            is_success = True
+        if self.rearr_obj_name == self.goal_object:
             is_success = True
         return is_success
 
@@ -280,7 +262,11 @@ class Scene:
 
     def check_terminal_state_bench_3(self):
         is_success = False
+
         if self.robot.gripper.attached_obj_name == self.goal_object:
+            if self.cur_place_obj_name == "tray_blue":
+                is_success = True
+        if self.rearr_obj_name == self.goal_object:
             if self.cur_place_obj_name == "tray_blue":
                 is_success = True
         return is_success

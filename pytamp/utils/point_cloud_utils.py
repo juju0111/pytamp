@@ -6,6 +6,7 @@ from pykin.utils import mesh_utils as m_utils
 from pytamp.utils.making_scene_utils import Make_Scene
 from pytamp.scene.scene import Scene
 
+
 def get_obj_point_clouds(sample_scene: Make_Scene, scene: Scene, manipulate_obj_name):
     pc_full = trimesh.PointCloud(np.zeros((1, 3))).vertices
     pc_segments = {}
@@ -13,23 +14,31 @@ def get_obj_point_clouds(sample_scene: Make_Scene, scene: Scene, manipulate_obj_
     pc_count = 0
     pass_count = 0
 
-    sample_num = 3000
     for _, item in enumerate(scene.objs.items()):
+        sample_num = 3000
         # The support object only considers the top plane
         # So there is no need for point clouds in other parts of the mesh except for the top plane.
         name, i = item
         pass_bool = False
-        for k in sample_scene._support_objects.keys():
-            if k in name:
-                pass_count += 1
-                pass_bool = True
-                continue
+        if name != "shelves":
+            for k in sample_scene._support_objects.keys():
+                if k in name:
+                    pass_count += 1
+                    pass_bool = True
+                    continue
+
         if pass_bool:
             continue
 
-        copied_mesh = deepcopy(i.gparam)
-        copied_mesh.apply_translation(-i.gparam.center_mass)
-        copied_mesh.apply_transform(i.h_mat)
+        if name == "shelves":
+            sample_num = 15000
+            copied_mesh = deepcopy(i.gparam)
+            # copied_mesh.apply_translation(-i.gparam.center_mass)
+            copied_mesh.apply_transform(i.h_mat)
+        else:
+            copied_mesh = deepcopy(i.gparam)
+            copied_mesh.apply_translation(-i.gparam.center_mass)
+            copied_mesh.apply_transform(i.h_mat)
 
         # random sampling으로 mesh 위 point cloud 일부 가져오기
         points = copied_mesh.sample(sample_num).astype(
@@ -55,8 +64,10 @@ def get_support_space_point_cloud(sample_scene: Make_Scene, scene: Scene):
     sample_num = 3000
 
     support_polys, support_T, sup_obj_name = sample_scene._get_support_polygons()
-    # print("sup_obj :", sup_obj_name)
-    support_index = max(enumerate(support_polys), key=lambda x: x[1].area)[0]
+    if sup_obj_name == "shelves":
+        support_index = 7
+    else:
+        support_index = max(enumerate(support_polys), key=lambda x: x[1].area)[0]
 
     pts = trimesh.path.polygons.sample(support_polys[support_index], count=sample_num)
     z_arr = np.full((len(pts), 1), 0)
@@ -65,10 +76,16 @@ def get_support_space_point_cloud(sample_scene: Make_Scene, scene: Scene):
     sup_point_cloud = np.hstack((pts, z_arr))
     sup_point_cloud = np.hstack((sup_point_cloud, o_arr))
 
-    transformed_point_cloud = (
-        np.dot(support_T[support_index][:3], sup_point_cloud.T).T
-        + scene.objs[sup_obj_name[support_index]].h_mat[:3, 3]
-    )
+    if sup_obj_name == "shelves":
+        transformed_point_cloud = (
+            np.dot(support_T[support_index][:3], sup_point_cloud.T).T
+            + scene.objs[sup_obj_name[support_index]].h_mat[:3, 3]
+        )
+    else:
+        transformed_point_cloud = (
+            np.dot(support_T[support_index][:3], sup_point_cloud.T).T
+            + scene.objs[sup_obj_name[support_index]].h_mat[:3, 3]
+        )
 
     color = (np.ones((sample_num, 3)) * scene.objs[sup_obj_name[support_index]].color).astype(
         np.int8
@@ -150,4 +167,3 @@ def get_mixed_scene(rearr_action, next_scene, current_scene, obj_to_manipulate):
             name_, obj.gtype, obj.gparam, transformed_h_mat, obj.color - 3
         )
     return rearr_action
-

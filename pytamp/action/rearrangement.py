@@ -111,34 +111,40 @@ class RearrangementAction(ActivityBase):
         elif scene.bench_num == 1:
             for sup_obj_name, _ in scene.objs.items():
                 if sup_obj_name == "table":
+                    if scene.logical_states[obj_name].get(scene.logical_state.on).name == "table":
+                        continue
+
                     location_table = list(
                         self.get_arbitrary_location(
                             obj_name,
                             scene_for_sample=scene_for_sample,
+                            support_obj_name=sup_obj_name,
                             sample_num=self.n_sample,
+                            erosion_dist=0.02,
                         )
                     )
                     location.extend(location_table)
                 else:
-
-                    ## 후보 여러개 가능한 버전 
+                    ## 후보 여러개 가능한 버전
                     # if scene.logical_state.support in scene.logical_states[sup_obj_name]:
                     #     continue
 
-                    ## tray 위에 있는 obj에만 놓을 수 있는 세팅 
+                    ## tray 위에 있는 obj에만 놓을 수 있는 세팅
                     if "box" in sup_obj_name:
                         continue
 
-                    tray_upper_thing = scene.logical_states['tray_red'].get('support')
-                    sup_obj_name = 'tray_red'
+                    tray_upper_thing = scene.logical_states["tray_red"].get("support")
+                    sup_obj_name = "tray_red"
                     while tray_upper_thing:
-                        sup_obj_name = tray_upper_thing[0].name if tray_upper_thing[0].name else None
+                        sup_obj_name = (
+                            tray_upper_thing[0].name if tray_upper_thing[0].name else None
+                        )
                         # print("obj_name : ", obj_name)
                         if sup_obj_name:
-                            tray_upper_thing = scene.logical_states[sup_obj_name].get('support')
+                            tray_upper_thing = scene.logical_states[sup_obj_name].get("support")
                         else:
                             break
-                    
+
                     # print(sup_obj_name)
                     ##
                     if "box" in sup_obj_name and "box" in obj_name:
@@ -154,11 +160,82 @@ class RearrangementAction(ActivityBase):
                             sup_obj_name,
                             scene_for_sample=scene_for_sample,
                             sample_num=self.n_sample,
+                            erosion_dist=0.05,
+                        )
+                    )
+                    location.extend(location_obj)
+        elif scene.bench_num == 2:
+            for sup_obj_name, _ in scene.objs.items():
+                if "goal" not in obj_name:
+                    if sup_obj_name not in ["shelves"]:
+                        continue
+                else:
+                    if sup_obj_name not in ["trash_bin"]:
+                        continue
+
+                if sup_obj_name == "shelves":
+                    location_shelves = list(
+                        self.get_arbitrary_location(
+                            obj_name,
+                            support_obj_name=sup_obj_name,
+                            scene_for_sample=scene_for_sample,
+                            sample_num=self.n_sample,
+                        )
+                    )
+                    location.extend(location_shelves)
+                else:
+                    # Go to trash !
+                    # print("Go to Trash : ", obj_name, sup_obj_name)
+                    location.append(
+                        {
+                            sup_obj_name: np.array(
+                                [
+                                    [-4.91581000e-04, 9.97857965e-01, 6.54159049e-02, -0.20],
+                                    [9.99999879e-01, 4.92636185e-04, -9.45645645e-12, 0.855],
+                                    [-3.22262512e-05, 6.54158969e-02, -9.97858086e-01, 1.11],
+                                    [0, 0, 0, 1],
+                                ]
+                            )
+                        }
+                    )
+
+            # print("bottle rearr_pose : ", location)
+
+        elif scene.bench_num == 3:
+            for sup_obj_name, _ in scene_for_sample._support_objects.items():
+                if "can" in obj_name:
+                    if sup_obj_name not in ["tray_blue"]:
+                        continue
+                else:
+                    if sup_obj_name not in ["table"]:
+                        continue
+
+                if sup_obj_name == "table":
+                    if scene.logical_states[obj_name].get(scene.logical_state.on).name == "table":
+                        continue
+
+                    location_table = list(
+                        self.get_arbitrary_location(
+                            obj_name,
+                            scene_for_sample=scene_for_sample,
+                            support_obj_name=sup_obj_name,
+                            sample_num=self.n_sample,
+                        )
+                    )
+                    location.extend(location_table)
+
+                else:
+                    location_obj = list(
+                        self.get_arbitrary_location(
+                            obj_name,
+                            sup_obj_name,
+                            scene_for_sample=scene_for_sample,
+                            sample_num=self.n_sample,
                         )
                     )
                     location.extend(location_obj)
 
-        # print(f"first {obj_name} : ", location)
+        # print(f"first {obj_name}, {sup_obj_name} : ", location)
 
         if self.use_pick_action:
             release_poses_not_collision = list(
@@ -249,6 +326,7 @@ class RearrangementAction(ActivityBase):
         support_obj_name: str = None,
         scene_for_sample: Make_Scene = None,
         sample_num: int = 0,
+        erosion_dist=0.015,
     ) -> dict:
         """
         Sample arbitrary location how many you want
@@ -262,9 +340,10 @@ class RearrangementAction(ActivityBase):
         """
         total_location = []
 
+        # print("get_arbitrary_location : ", obj_name)
         for i in range(sample_num):
             location = {}
-            if support_obj_name:
+            if support_obj_name not in ["table", "shelves"]:
                 (
                     result,
                     pose,
@@ -283,8 +362,11 @@ class RearrangementAction(ActivityBase):
                 ) = scene_for_sample.find_object_placement(
                     self.scene_mngr.scene.objs[obj_name].gparam,
                     max_iter=100,
+                    support_obj_name=support_obj_name,
                     distance_above_support=0.0005,
                     for_goal_scene=True,
+                    use_distance_limit=True,
+                    erosion_dist=erosion_dist,
                 )
             if result:
                 # 현재 rearr action은 Acronym으로 뽑는 방식임
@@ -618,6 +700,8 @@ class RearrangementAction(ActivityBase):
                 next_scene.rearr_poses = deepcopy(rearr_pose)
                 next_scene.rearr_obj_default_pose = deepcopy(scene.objs[name].h_mat)
                 next_scene.rearr_obj_name = deepcopy(name)
+                next_scene.cur_place_obj_name = place_obj_name
+
                 # print(name, place_obj_name, next_scene.rearr_poses)
                 pose = next_scene.rearr_poses[place_obj_name]
 
@@ -812,9 +896,13 @@ class RearrangementAction(ActivityBase):
         return action
 
     def render_axis(self, scene_mngr: SceneManager):
-        for o_name in self.scene_mngr.scene.goal_objects:
-            pose = scene_mngr.scene.objs[o_name].h_mat
+        if self.scene_mngr.scene.bench_num in [2, 3]:
+            pose = scene_mngr.scene.objs[scene_mngr.scene.goal_object].h_mat
             scene_mngr.render.render_axis(pose)
+        else:
+            for o_name in self.scene_mngr.scene.goal_objects:
+                pose = scene_mngr.scene.objs[o_name].h_mat
+                scene_mngr.render.render_axis(pose)
 
     def _check_q_in_limits(self, q_in):
         """

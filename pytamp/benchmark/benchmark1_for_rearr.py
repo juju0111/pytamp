@@ -94,6 +94,17 @@ class Benchmark1_for_rearr(Benchmark):
             )
         )
 
+        # F is on table setting
+        # F_box_pose = Transform(
+        #     pos=np.array(
+        #         [
+        #             0.5,
+        #             0,
+        #             table_height + abs(self.box_mesh.bounds[0][2]) + off_set,
+        #         ]
+        #     )
+        # )
+
         # A_box_pose = Transform(pos=np.array([0.6, 0, table_height + abs(self.box_mesh.bounds[0][2]) + off_set]))
         # B_box_pose = Transform(pos=np.array([0.6, -0.2, table_height + abs(self.box_mesh.bounds[0][2]) + off_set]))
         # C_box_pose = Transform(pos=np.array([0.6, 0.2, table_height + abs(self.box_mesh.bounds[0][2]) + off_set] ))
@@ -163,6 +174,17 @@ class Benchmark1_for_rearr(Benchmark):
             ("G_box", ("on", "table")),
             ("H_box", ("on", "table")),
         ]
+        # F is on table setting
+        # logical_states = [
+        #     ("A_box", ("on", "table")),
+        #     ("B_box", ("on", "table")),
+        #     ("C_box", ("on", "table")),
+        #     ("D_box", ("on", "C_box")),
+        #     ("E_box", ("on", "B_box")),
+        #     ("F_box", ("on", "table")),
+        #     ("G_box", ("on", "table")),
+        #     ("H_box", ("on", "table")),
+        # ]
 
         self.init_logical_states = deepcopy(logical_states)
 
