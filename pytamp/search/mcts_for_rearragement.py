@@ -822,7 +822,7 @@ class MCTS_rearrangement:
         depth=None,
         is_terminal: bool = False,
     ) -> float:
-        reward = -1
+        reward = -.1
         if is_terminal:
             print(f"Terminal State! Reward is {self.goal_reward}")
             return self.goal_reward
@@ -911,10 +911,10 @@ class MCTS_rearrangement:
                 if next_state_is_success:
                     if next_state.stacked_box_num - prev_stacked_box_num == 1:
                         print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                        return abs(reward) * 1 / (depth + 1) * 10
+                        return abs(reward) * 1 / (depth + 1) * 200
                 if next_state.stacked_box_num - prev_stacked_box_num == -1:
                     print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                    return max(reward * 1 / (depth + 1) * 20, self.infeasible_reward)
+                    return max(reward * 1 / (depth + 1) * 200, self.infeasible_reward)
 
         # if self.scene_mngr.scene.bench_num == 2:
         #     logical_action_type = cur_logical_action[self.pick_action.info.TYPE]

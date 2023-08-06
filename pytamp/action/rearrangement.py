@@ -110,12 +110,6 @@ class RearrangementAction(ActivityBase):
                 location.append(goal_location)
         elif scene.bench_num == 1:
             for sup_obj_name, _ in scene.objs.items():
-                if "box" in sup_obj_name and "box" in obj_name:
-                    sup_obj_num = ord(sup_obj_name.split("_")[0])
-                    held_obj_num = ord(obj_name.split("_")[0])
-                    if held_obj_num < sup_obj_num:
-                        continue
-
                 if sup_obj_name == "table":
                     location_table = list(
                         self.get_arbitrary_location(
@@ -126,11 +120,34 @@ class RearrangementAction(ActivityBase):
                     )
                     location.extend(location_table)
                 else:
-                    if scene.logical_state.support in scene.logical_states[sup_obj_name]:
-                        continue
-                    if sup_obj_name == obj_name:
+
+                    ## 후보 여러개 가능한 버전 
+                    # if scene.logical_state.support in scene.logical_states[sup_obj_name]:
+                    #     continue
+
+                    ## tray 위에 있는 obj에만 놓을 수 있는 세팅 
+                    if "box" in sup_obj_name:
                         continue
 
+                    tray_upper_thing = scene.logical_states['tray_red'].get('support')
+                    sup_obj_name = 'tray_red'
+                    while tray_upper_thing:
+                        sup_obj_name = tray_upper_thing[0].name if tray_upper_thing[0].name else None
+                        # print("obj_name : ", obj_name)
+                        if sup_obj_name:
+                            tray_upper_thing = scene.logical_states[sup_obj_name].get('support')
+                        else:
+                            break
+                    
+                    # print(sup_obj_name)
+                    ##
+                    if "box" in sup_obj_name and "box" in obj_name:
+                        sup_obj_num = ord(sup_obj_name.split("_")[0])
+                        held_obj_num = ord(obj_name.split("_")[0])
+                        if held_obj_num <= sup_obj_num:
+                            continue
+                    # if sup_obj_name == obj_name:
+                    #     continue
                     location_obj = list(
                         self.get_arbitrary_location(
                             obj_name,

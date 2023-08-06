@@ -93,6 +93,7 @@ def find_idx_from_bai_perturb(tree, children, c):
         best_node_idx = 0
     else:
         g = np.random.normal(size=(len(selected_visits)))
+        g = np.clip(g,-1,1)
         visit_count = np.maximum(1.0, selected_visits)
         upper_bounds = selected_values / visit_count + c * np.sqrt(1.0 / visit_count) * g
         lower_bounds = selected_values / visit_count - c * np.sqrt(1.0 / visit_count) * g
