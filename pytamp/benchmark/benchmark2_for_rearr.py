@@ -60,9 +60,9 @@ class Benchmark2_for_rearr(Benchmark):
         """
         self.shelves_mesh = self.init_scene._support_objects["shelves"]
 
-        self.shelves_pose = Transform(pos=np.array([0.6, 1.4, 1.10]), rot=[0, 0, -np.pi / 2])
+        self.shelves_pose = Transform(pos=np.array([0.6, 1.6, 1.10]), rot=[0, 0, -np.pi / 2])
         self.bin_pose = Transform(pos=np.array([-0.4, 0.55, 0.0]))
-        self.rect_pose = Transform(pos=np.array([0.82, 0.5, 0.615]))
+        self.rect_pose = Transform(pos=np.array([0.82, 0.4, 0.835]))
 
         self.scene_mngr.shelves_pose = self.shelves_pose
 
@@ -107,7 +107,7 @@ class Benchmark2_for_rearr(Benchmark):
             color=[0.64, 0.81, 0.85],
         )
 
-        rect_box_mesh = get_object_mesh("rect_box.stl", [0.013, 0.013, 0.01])
+        rect_box_mesh = get_object_mesh("rect_box.stl", [0.013, 0.016, 0.015])
         self.scene_mngr.add_object(
             name="rect_box",
             gtype="mesh",
@@ -173,7 +173,7 @@ class Benchmark2_for_rearr(Benchmark):
 
         # for ACRONYM
         support_mesh = load_mesh(
-            args.support, mesh_root_dir=args.mesh_root, scale=[0.025, 0.020, 0.0125]
+            args.support, mesh_root_dir=args.mesh_root, scale=[0.03, 0.020, 0.0125]
         )
 
         support_meshes.append(support_mesh)

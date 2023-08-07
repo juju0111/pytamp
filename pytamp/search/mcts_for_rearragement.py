@@ -761,6 +761,7 @@ class MCTS_rearrangement:
             if logical_action_type == "rearr":
                 cur_geometry_action = next_scene.rearr_poses
 
+            # print("cur_logical_node :", self.tree.nodes[cur_logical_action_node])
             self.tree.add_node(next_node)
             self.tree.update(
                 nodes=[
@@ -781,7 +782,12 @@ class MCTS_rearrangement:
                             NodeData.LEVEL1_5: False,
                             NodeData.SUCCESS: False,
                             NodeData.COST: 0,
-                            NodeData.TEST: (),
+                            NodeData.TEST: (
+                                cur_logical_action.get("rearr_obj_name"),
+                                cur_logical_action.get("rearr_poses")[0].get(
+                                    cur_logical_action.get("place_obj_name")
+                                ),
+                            ),
                         },
                     )
                 ]
@@ -1144,12 +1150,17 @@ class MCTS_rearrangement:
                     self.tree.nodes[0][NodeData.LEVEL2] = True
 
                     # if success_pick and success_place:
-                    self.tree.nodes[sub_optimal_node][NodeData.TEST] = deepcopy(
-                        (
-                            pick_scene.rearr_obj_name,
-                            pick_scene.objs[pick_scene.rearr_obj_name].h_mat,
-                        )
+                    print(
+                        "post processing for video save : Joint path :",
+                        pick_scene.rearr_obj_name,
+                        pick_scene.objs[pick_scene.rearr_obj_name].h_mat,
                     )
+                    # self.tree.nodes[sub_optimal_node][NodeData.TEST] = deepcopy(
+                    #     (
+                    #         pick_scene.rearr_obj_name,
+                    #         pick_scene.objs[pick_scene.rearr_obj_name].h_mat,
+                    #     )
+                    # )
                     print("Success pnp")
 
                 else:

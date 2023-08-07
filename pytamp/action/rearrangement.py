@@ -256,8 +256,8 @@ class RearrangementAction(ActivityBase):
         for grasp_ in grasp_set:
             all_grasp_pose = self.get_all_grasps_from_grasps(grasp_)
 
-            # if self.scene_mngr.scene.bench_num == 2:
-            # self.scene_mngr.close_gripper(0.015)
+            if self.scene_mngr.scene.bench_num == 2:
+                self.scene_mngr.close_gripper(0.015)
             for name, pose in all_grasp_pose.items():
                 is_collision = False
 
@@ -355,19 +355,34 @@ class RearrangementAction(ActivityBase):
                     for_goal_scene=True,
                 )
             else:
-                (
-                    result,
-                    pose,
-                    sup_obj_name,
-                ) = scene_for_sample.find_object_placement(
-                    self.scene_mngr.scene.objs[obj_name].gparam,
-                    max_iter=100,
-                    support_obj_name=support_obj_name,
-                    distance_above_support=0.0005,
-                    for_goal_scene=True,
-                    use_distance_limit=True,
-                    erosion_dist=erosion_dist,
-                )
+                if support_obj_name == "table":
+                    (
+                        result,
+                        pose,
+                        sup_obj_name,
+                    ) = scene_for_sample.find_object_placement(
+                        self.scene_mngr.scene.objs[obj_name].gparam,
+                        max_iter=100,
+                        support_obj_name=support_obj_name,
+                        distance_above_support=0.0005,
+                        for_goal_scene=True,
+                        use_distance_limit=True,
+                        erosion_dist=erosion_dist,
+                    )
+                else:
+                    (
+                        result,
+                        pose,
+                        sup_obj_name,
+                    ) = scene_for_sample.find_object_placement(
+                        self.scene_mngr.scene.objs[obj_name].gparam,
+                        max_iter=100,
+                        support_obj_name=support_obj_name,
+                        distance_above_support=0.0005,
+                        for_goal_scene=True,
+                        use_distance_limit=False,
+                        erosion_dist=erosion_dist,
+                    )
             if result:
                 # 현재 rearr action은 Acronym으로 뽑는 방식임
                 # 만약 다른 object에 place하고 싶다면 그 object에서 sample point 뽑고
