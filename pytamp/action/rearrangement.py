@@ -102,7 +102,7 @@ class RearrangementAction(ActivityBase):
             # sample_arbitrary_location
             location = list(
                 self.get_arbitrary_location(
-                    obj_name, scene_for_sample=scene_for_sample, sample_num=self.n_sample
+                    obj_name, scene_for_sample=scene_for_sample, sample_num=self.n_sample, support_obj_name=goal_sup_obj
                 )
             )
 

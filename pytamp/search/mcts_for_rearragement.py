@@ -763,35 +763,62 @@ class MCTS_rearrangement:
 
             # print("cur_logical_node :", self.tree.nodes[cur_logical_action_node])
             self.tree.add_node(next_node)
-            self.tree.update(
-                nodes=[
-                    (
-                        next_node,
-                        {
-                            NodeData.NUMBER: next_node,
-                            NodeData.VISIT: 0,
-                            NodeData.DEPTH: depth + 1,
-                            NodeData.STATE: next_state,
-                            NodeData.ACTION: cur_geometry_action,
-                            NodeData.VALUE: -np.inf,
-                            NodeData.VALUE_HISTORY: [],
-                            NodeData.TYPE: "state",
-                            NodeData.JOINTS: [],
-                            NodeData.LEVEL1: False,
-                            NodeData.LEVEL2: False,
-                            NodeData.LEVEL1_5: False,
-                            NodeData.SUCCESS: False,
-                            NodeData.COST: 0,
-                            NodeData.TEST: (
-                                cur_logical_action.get("rearr_obj_name"),
-                                cur_logical_action.get("rearr_poses")[0].get(
-                                    cur_logical_action.get("place_obj_name")
+            if not self.use_pick_action:
+
+                self.tree.update(
+                    nodes=[
+                        (
+                            next_node,
+                            {
+                                NodeData.NUMBER: next_node,
+                                NodeData.VISIT: 0,
+                                NodeData.DEPTH: depth + 1,
+                                NodeData.STATE: next_state,
+                                NodeData.ACTION: cur_geometry_action,
+                                NodeData.VALUE: -np.inf,
+                                NodeData.VALUE_HISTORY: [],
+                                NodeData.TYPE: "state",
+                                NodeData.JOINTS: [],
+                                NodeData.LEVEL1: False,
+                                NodeData.LEVEL2: False,
+                                NodeData.LEVEL1_5: False,
+                                NodeData.SUCCESS: False,
+                                NodeData.COST: 0,
+                                NodeData.TEST: (
+                                    cur_logical_action.get("rearr_obj_name"),
+                                    cur_logical_action.get("rearr_poses")[0].get(
+                                        cur_logical_action.get("place_obj_name")
+                                    ),
                                 ),
-                            ),
-                        },
-                    )
-                ]
-            )
+                            },
+                        )
+                    ]
+                )
+            else:
+                self.tree.update(
+                    nodes=[
+                        (
+                            next_node,
+                            {
+                                NodeData.NUMBER: next_node,
+                                NodeData.VISIT: 0,
+                                NodeData.DEPTH: depth + 1,
+                                NodeData.STATE: next_state,
+                                NodeData.ACTION: cur_geometry_action,
+                                NodeData.VALUE: -np.inf,
+                                NodeData.VALUE_HISTORY: [],
+                                NodeData.TYPE: "state",
+                                NodeData.JOINTS: [],
+                                NodeData.LEVEL1: False,
+                                NodeData.LEVEL2: False,
+                                NodeData.LEVEL1_5: False,
+                                NodeData.SUCCESS: False,
+                                NodeData.COST: 0,
+                                NodeData.TEST: (),
+                            },
+                        )
+                    ]
+                )
             self.tree.add_edge(cur_logical_action_node, next_node)
 
     def _sample_child_node(self, children, exploration_method, depth):
