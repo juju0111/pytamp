@@ -61,7 +61,6 @@ seed = args.seed
 number = args.box_number
 np.random.seed(seed)
 
-benchmark1 = Benchmark1(robot_name="panda", geom="collision", is_pyplot=False, box_num=6)
 
 final_level_1_values = []
 final_level_2_values = []
@@ -88,6 +87,8 @@ elif args.use_pick_action:
 
 
 for idx, c in enumerate(c_list):
+    benchmark1 = Benchmark1(robot_name="panda", geom="collision", is_pyplot=False, box_num=6)
+
     mcts = MCTS_rearrangement(
         scene_mngr=benchmark1.scene_mngr,
         init_scene=benchmark1.init_scene,
