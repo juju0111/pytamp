@@ -102,7 +102,10 @@ class RearrangementAction(ActivityBase):
             # sample_arbitrary_location
             location = list(
                 self.get_arbitrary_location(
-                    obj_name, scene_for_sample=scene_for_sample, sample_num=self.n_sample, support_obj_name=goal_sup_obj
+                    obj_name,
+                    scene_for_sample=scene_for_sample,
+                    sample_num=self.n_sample,
+                    support_obj_name=goal_sup_obj,
                 )
             )
 
@@ -751,6 +754,7 @@ class RearrangementAction(ActivityBase):
             location : not collide with current scene.
 
         """
+        self.place_obj_names = []
         for i in location:
             for sup_obj_name, goal_pose in i.items():
                 is_collision = False
@@ -827,6 +831,7 @@ class RearrangementAction(ActivityBase):
                     # i[obj_name] = None
 
                 if not is_collision:
+                    self.place_obj_names.append(sup_obj_name)
                     yield release_poses, target_obj_and_current_location
 
     def get_goal_location_not_collision(self, obj_name: str, location: list):
@@ -887,7 +892,7 @@ class RearrangementAction(ActivityBase):
         action = {}
         action[self.info.TYPE] = "rearr"
         action[self.info.REARR_OBJ_NAME] = obj_name
-
+        # print("iam here", action)
         if possible_action:
             # action[self.info.PLACE_OBJ_NAME] = list(possible_action[0][-1].keys())[0]
             action[self.info.PLACE_OBJ_NAME] = self.place_obj_names

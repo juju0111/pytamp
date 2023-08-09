@@ -149,7 +149,7 @@ class PickAction(ActivityBase):
                 grasp_poses.extend(list(self.get_grasp_pose_from_heuristic(obj_name)))
             if not grasp_poses:
                 continue
-            print(obj_name, grasp_poses)
+            # print(obj_name, grasp_poses)
             grasp_poses_not_collision = list(self.get_all_grasp_poses_not_collision(grasp_poses))
 
         action_level_1 = self.get_action(obj_name, grasp_poses_not_collision)

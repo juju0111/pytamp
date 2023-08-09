@@ -14,6 +14,8 @@ from pytamp.utils.point_cloud_utils import get_support_space_point_cloud
 
 class Grasp_Using_Contact_GraspNet:
     def __init__(self, action, robot_name, bench_num=0):
+        tf.reset_default_graph()
+
         tf.disable_eager_execution()
         physical_devices = tf.config.list_physical_devices("GPU")
 

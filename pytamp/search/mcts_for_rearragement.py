@@ -54,7 +54,8 @@ class MCTS_rearrangement:
         self.time_used_in_level_1 = 0
         self.time_used_in_level_1_5 = 0
         self.time_used_in_level_2 = 0
-
+        self.max_level_1_value = 0
+        self.last_max_level_1_value = 0
         if bench_num == 0:
             # robot action은 우선 패스하고 object transition만 고려해서 Goal Scene을 만족하는
             # state가 나올 때 까지 search!!
@@ -152,13 +153,14 @@ class MCTS_rearrangement:
         if self.scene_mngr.scene.bench_num == 3:
             self.infeasible_reward = -5
             self.goal_reward = 10
+            self.manipulated_obj_num = 0
 
         # if self.scene_mngr.scene.bench_num == 4:
         #     self.infeasible_reward = -5
         #     self.goal_reward = 15
 
-        self.values_for_level_1 = []
-        self.values_for_level_2 = []
+        self.values_for_level_1 = [0]
+        self.values_for_level_2 = [0]
         self.level2_max_value = -np.inf
 
         self.level_wise_1_success = False
@@ -228,8 +230,17 @@ class MCTS_rearrangement:
         level_1_start_time = time.time()
         self._level_wise_1_optimize_rearr(state_node=0, depth=0)
         self.time_used_in_level_1 += time.time() - level_1_start_time
-        max_level_1_value = self.get_max_value_level_1()
-        self.values_for_level_1.append(max_level_1_value)
+
+        ##### modified bugs
+        if self.get_max_value_level_1() < self.last_max_level_1_value:
+            self.max_level_1_value = self.last_max_level_1_value
+        else:
+            self.max_level_1_value = self.get_max_value_level_1()
+
+        self.last_max_level_1_value = self.values_for_level_1[-1]
+        self.values_for_level_1.append(self.max_level_1_value)
+
+        print("last max  value level 1 :", self.last_max_level_1_value)
 
         ############  level 1 ################
 
@@ -246,6 +257,7 @@ class MCTS_rearrangement:
                 for level_1_optimal_nodes in self.history_level_1_optimal_nodes:
                     if set(success_level_1_sub_nodes).issubset(level_1_optimal_nodes):
                         print("Aleady has optimal nodes!!")
+                        self._revise_values_for_level_1()
                         self.has_aleardy_level_1_optimal_nodes = True
                         break
 
@@ -429,6 +441,14 @@ class MCTS_rearrangement:
         return value
 
     def _level_wise_between_1_and_2_optimize(self, sub_optimal_nodes, use_next_scene=True) -> None:
+        if self.tree.nodes[0][NodeData.SUCCESS]:
+            if self.tree.nodes[0][NodeData.VALUE_HISTORY][-1] < self.tree.nodes[0][NodeData.VALUE]:
+                print(
+                    f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
+                )
+                self._revise_values_for_level_1()
+                return
+
         node_length = int(len(sub_optimal_nodes) / 2)
         for i in range(node_length):
             parent_node = self.tree.nodes[sub_optimal_nodes[2 * i]]
@@ -513,15 +533,16 @@ class MCTS_rearrangement:
                     current_node[NodeData.LEVEL1_5] = False
                     next_node[NodeData.LEVEL1_5] = False
             if chance_ == 0:
-                self.tree.nodes[sub_optimal_nodes[2 * i]][NodeData.VALUE] = -current_node.get(
-                    NodeData.VALUE
-                )
-                self.tree.nodes[sub_optimal_nodes[2 * i + 1]][NodeData.VALUE] = -current_node.get(
-                    NodeData.VALUE
-                )
-                self.tree.nodes[sub_optimal_nodes[2 * i + 2]][NodeData.VALUE] = -next_node.get(
-                    NodeData.VALUE
-                )
+                # Failed case Reward setting
+                # self.tree.nodes[sub_optimal_nodes[2 * i]][NodeData.VALUE] = -current_node.get(
+                #     NodeData.VALUE
+                # )
+                # self.tree.nodes[sub_optimal_nodes[2 * i + 1]][NodeData.VALUE] = -current_node.get(
+                #     NodeData.VALUE
+                # )
+                # self.tree.nodes[sub_optimal_nodes[2 * i + 2]][NodeData.VALUE] = -next_node.get(
+                #     NodeData.VALUE
+                # )
                 self.infeasible_sub_nodes.append(sub_optimal_nodes)
             #     # break
 
@@ -764,7 +785,6 @@ class MCTS_rearrangement:
             # print("cur_logical_node :", self.tree.nodes[cur_logical_action_node])
             self.tree.add_node(next_node)
             if not self.use_pick_action:
-
                 self.tree.update(
                     nodes=[
                         (
@@ -967,7 +987,7 @@ class MCTS_rearrangement:
                 if next_state_is_success:
                     if next_state.stacked_box_num - prev_stacked_box_num == 1:
                         print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                        return abs(reward) * 1 / (depth + 1) * 200
+                        return abs(reward) * 1 / (depth + 1) * 100
                 if next_state.stacked_box_num - prev_stacked_box_num == -1:
                     print(f"{sc.FAIL}Bad Action{sc.ENDC}")
                     return max(reward * 1 / (depth + 1) * 200, self.infeasible_reward)
@@ -1011,15 +1031,24 @@ class MCTS_rearrangement:
         #             reward = 1
         #         self.pick_obj_list.append(cur_pick_obj_name)
 
-        # if self.scene_mngr.scene.bench_num == 3:
-        #     if logical_action_type == "pick":
-        #         cur_pick_obj_name = cur_logical_action[self.pick_action.info.PICK_OBJ_NAME]
-        #         if cur_pick_obj_name in self.pick_obj_set:
-        #             print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-        #             reward = -1
-        #         else:
-        #             reward = 2
-        #         self.pick_obj_set.add(cur_pick_obj_name)
+        if self.scene_mngr.scene.bench_num == 3:
+            if logical_action_type == "pick":
+                cur_pick_obj_name = cur_logical_action[self.pick_action.info.PICK_OBJ_NAME]
+                if cur_pick_obj_name in self.pick_obj_set:
+                    print(f"{sc.FAIL}Bad Action{sc.ENDC}")
+                    reward = -1
+                else:
+                    reward = 2
+                self.pick_obj_set.add(cur_pick_obj_name)
+
+            if logical_action_type == "rearr":
+                cur_pick_obj_name = cur_logical_action[self.rearr_action.info.REARR_OBJ_NAME]
+                if len(self.pick_obj_set) > 3:
+                    print(f"{sc.FAIL}Bad Action{sc.ENDC}")
+                    reward = -10
+                else:
+                    reward = 2
+                self.pick_obj_set.add(cur_pick_obj_name)
 
         # if self.scene_mngr.scene.bench_num == 4:
         #     if logical_action_type == "pick":
@@ -1050,6 +1079,13 @@ class MCTS_rearrangement:
 
         return reward
 
+    def _revise_values_for_level_1(self):
+        self.tree.nodes[0][NodeData.VALUE] = 0
+        self.values_for_level_1[-1] = self.last_max_level_1_value
+        print("Tree node value : ", self.tree.nodes[0]["value"])
+        self.max_level_1_value = 0
+        return
+
     def _level_wise_2_optimize_rearr(self, sub_optimal_nodes):
         if not sub_optimal_nodes:
             print(f"{sc.FAIL}Not found any sub optimal nodes.{sc.ENDC}")
@@ -1060,6 +1096,7 @@ class MCTS_rearrangement:
                 print(
                     f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
                 )
+                self._revise_values_for_level_1()
                 return
 
         for infeasible_node in self.infeasible_sub_nodes:
@@ -1067,6 +1104,8 @@ class MCTS_rearrangement:
                 print(
                     f"{sc.FAIL}This optimal subnodes({infeasible_node}) is infeasible subnodes.{sc.ENDC}"
                 )
+                self._revise_values_for_level_1()
+                print("Max_value level 1 at failed : ", self.max_level_1_value)
                 return
 
         self.show_logical_actions(sub_optimal_nodes)
@@ -1177,11 +1216,11 @@ class MCTS_rearrangement:
                     self.tree.nodes[0][NodeData.LEVEL2] = True
 
                     # if success_pick and success_place:
-                    print(
-                        "post processing for video save : Joint path :",
-                        pick_scene.rearr_obj_name,
-                        pick_scene.objs[pick_scene.rearr_obj_name].h_mat,
-                    )
+                    # print(
+                    #     "post processing for video save : Joint path :",
+                    #     pick_scene.rearr_obj_name,
+                    #     pick_scene.objs[pick_scene.rearr_obj_name].h_mat,
+                    # )
                     # self.tree.nodes[sub_optimal_node][NodeData.TEST] = deepcopy(
                     #     (
                     #         pick_scene.rearr_obj_name,
@@ -1194,6 +1233,8 @@ class MCTS_rearrangement:
                     print("Place joint Fail")
                     success_pick = False
                     self.infeasible_sub_nodes.append(sub_optimal_nodes)
+                    self._revise_values_for_level_1()
+
                     print(self.infeasible_sub_nodes)
                     break
         if success_pick and success_place:
@@ -1209,6 +1250,7 @@ class MCTS_rearrangement:
                 print(
                     f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
                 )
+                self._revise_values_for_level_1()
                 return
 
         for infeasible_node in self.infeasible_sub_nodes:
@@ -1216,6 +1258,7 @@ class MCTS_rearrangement:
                 print(
                     f"{sc.FAIL}This optimal subnodes({infeasible_node}) is infeasible subnodes.{sc.ENDC}"
                 )
+                self._revise_values_for_level_1()
                 return
 
         self.show_logical_actions(sub_optimal_nodes)

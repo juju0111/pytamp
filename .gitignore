@@ -13,6 +13,10 @@ benchmark1_result/
 benchmark2_result/
 benchmark3_result/
 benchmark4_result/
+benchmark1_rearr_result/
+benchmark3_rearr_result/
+benchmark0_rearr_result/
+
 *.mp4
 *.avi
 bench1_scene/

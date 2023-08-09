@@ -57,42 +57,42 @@ class Benchmark1_for_rearr(Benchmark):
         self.box_poses = []
         off_set = 0.073  # - 0.025
 
-        A_box_pose = Transform(
-            pos=np.array([0.6, 0, table_height + abs(self.box_mesh.bounds[0][2]) + off_set])
-        )
-        B_box_pose = Transform(
-            pos=np.array([0.6, -0.2, table_height + abs(self.box_mesh.bounds[0][2]) + off_set])
-        )
-        C_box_pose = Transform(
-            pos=np.array([0.6, 0.2, table_height + abs(self.box_mesh.bounds[0][2]) + off_set])
-        )
-        D_box_pose = Transform(
-            pos=np.array(
-                [
-                    0.6,
-                    0.2,
-                    table_height + abs(self.box_mesh.bounds[0][2]) + off_set + box_height,
-                ]
-            )
-        )
-        E_box_pose = Transform(
-            pos=np.array(
-                [
-                    0.6,
-                    -0.2,
-                    table_height + abs(self.box_mesh.bounds[0][2]) + off_set + box_height,
-                ]
-            )
-        )
-        F_box_pose = Transform(
-            pos=np.array(
-                [
-                    0.6,
-                    0,
-                    table_height + abs(self.box_mesh.bounds[0][2]) + off_set + box_height,
-                ]
-            )
-        )
+        # A_box_pose = Transform(
+        #     pos=np.array([0.6, 0, table_height + abs(self.box_mesh.bounds[0][2]) + off_set])
+        # )
+        # B_box_pose = Transform(
+        #     pos=np.array([0.6, -0.2, table_height + abs(self.box_mesh.bounds[0][2]) + off_set])
+        # )
+        # C_box_pose = Transform(
+        #     pos=np.array([0.6, 0.2, table_height + abs(self.box_mesh.bounds[0][2]) + off_set])
+        # )
+        # D_box_pose = Transform(
+        #     pos=np.array(
+        #         [
+        #             0.6,
+        #             0.2,
+        #             table_height + abs(self.box_mesh.bounds[0][2]) + off_set + box_height,
+        #         ]
+        #     )
+        # )
+        # E_box_pose = Transform(
+        #     pos=np.array(
+        #         [
+        #             0.6,
+        #             -0.2,
+        #             table_height + abs(self.box_mesh.bounds[0][2]) + off_set + box_height,
+        #         ]
+        #     )
+        # )
+        # F_box_pose = Transform(
+        #     pos=np.array(
+        #         [
+        #             0.6,
+        #             0,
+        #             table_height + abs(self.box_mesh.bounds[0][2]) + off_set + box_height,
+        #         ]
+        #     )
+        # )
 
         # F is on table setting
         # F_box_pose = Transform(
@@ -105,12 +105,28 @@ class Benchmark1_for_rearr(Benchmark):
         #     )
         # )
 
-        # A_box_pose = Transform(pos=np.array([0.6, 0, table_height + abs(self.box_mesh.bounds[0][2]) + off_set]))
-        # B_box_pose = Transform(pos=np.array([0.6, -0.2, table_height + abs(self.box_mesh.bounds[0][2]) + off_set]))
-        # C_box_pose = Transform(pos=np.array([0.6, 0.2, table_height + abs(self.box_mesh.bounds[0][2]) + off_set] ))
-        # D_box_pose = Transform(pos=np.array([0.8, 0, table_height + abs(self.box_mesh.bounds[0][2]) + off_set] ))
-        # E_box_pose = Transform(pos=np.array([0.8, 0, table_height + abs(self.box_mesh.bounds[0][2])+ off_set + box_height]))
-        # F_box_pose = Transform(pos=np.array([0.8, 0, table_height + abs(self.box_mesh.bounds[0][2])+ off_set + box_height * 2]))
+        A_box_pose = Transform(
+            pos=np.array([0.6, 0, table_height + abs(self.box_mesh.bounds[0][2]) + off_set])
+        )
+        B_box_pose = Transform(
+            pos=np.array([0.6, -0.2, table_height + abs(self.box_mesh.bounds[0][2]) + off_set])
+        )
+        C_box_pose = Transform(
+            pos=np.array([0.6, 0.2, table_height + abs(self.box_mesh.bounds[0][2]) + off_set])
+        )
+        D_box_pose = Transform(
+            pos=np.array([0.8, 0, table_height + abs(self.box_mesh.bounds[0][2]) + off_set])
+        )
+        E_box_pose = Transform(
+            pos=np.array(
+                [0.8, 0, table_height + abs(self.box_mesh.bounds[0][2]) + off_set + box_height]
+            )
+        )
+        F_box_pose = Transform(
+            pos=np.array(
+                [0.8, 0, table_height + abs(self.box_mesh.bounds[0][2]) + off_set + box_height * 2]
+            )
+        )
         G_box_pose = Transform(
             pos=np.array([0.8, -0.2, table_height + abs(self.box_mesh.bounds[0][2]) + off_set])
         )
@@ -164,16 +180,16 @@ class Benchmark1_for_rearr(Benchmark):
             h_mat=self.table_pose.h_mat,
             color=[0.823, 0.71, 0.55],
         )
-        logical_states = [
-            ("A_box", ("on", "table")),
-            ("B_box", ("on", "table")),
-            ("C_box", ("on", "table")),
-            ("D_box", ("on", "C_box")),
-            ("E_box", ("on", "B_box")),
-            ("F_box", ("on", "A_box")),
-            ("G_box", ("on", "table")),
-            ("H_box", ("on", "table")),
-        ]
+        # logical_states = [
+        #     ("A_box", ("on", "table")),
+        #     ("B_box", ("on", "table")),
+        #     ("C_box", ("on", "table")),
+        #     ("D_box", ("on", "C_box")),
+        #     ("E_box", ("on", "B_box")),
+        #     ("F_box", ("on", "A_box")),
+        #     ("G_box", ("on", "table")),
+        #     ("H_box", ("on", "table")),
+        # ]
         # F is on table setting
         # logical_states = [
         #     ("A_box", ("on", "table")),
@@ -186,16 +202,19 @@ class Benchmark1_for_rearr(Benchmark):
         #     ("H_box", ("on", "table")),
         # ]
 
+        logical_states = [
+            ("A_box", ("on", "table")),
+            ("B_box", ("on", "table")),
+            ("C_box", ("on", "table")),
+            ("D_box", ("on", "table")),
+            ("E_box", ("on", "D_box")),
+            ("F_box", ("on", "E_box")),
+            ("G_box", ("on", "table")),
+            ("H_box", ("on", "table")),
+        ]
+
         self.init_logical_states = deepcopy(logical_states)
 
-        # logical_states = [("A_box", ("on", "table")),
-        #                   ("B_box", ("on", "table")),
-        #                   ("C_box", ("on", "table")),
-        #                   ("D_box", ("on", "table")),
-        #                   ("E_box", ("on", "D_box")),
-        #                   ("F_box", ("on", "E_box")),
-        #                   ("G_box", ("on", "table")),
-        #                   ("H_box", ("on", "table")),]
         for i in range(self.box_num):
             box_name = self.scene_mngr.scene.alphabet_list[i] + "_box"
             box_mesh = get_object_mesh("ben_cube.stl", 0.05)
