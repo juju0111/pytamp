@@ -441,13 +441,13 @@ class MCTS_rearrangement:
         return value
 
     def _level_wise_between_1_and_2_optimize(self, sub_optimal_nodes, use_next_scene=True) -> None:
-        if self.tree.nodes[0][NodeData.SUCCESS]:
-            if self.tree.nodes[0][NodeData.VALUE_HISTORY][-1] < self.tree.nodes[0][NodeData.VALUE]:
-                print(
-                    f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
-                )
-                self._revise_values_for_level_1()
-                return
+        # if self.tree.nodes[0][NodeData.SUCCESS]:
+        #     if self.tree.nodes[0][NodeData.VALUE_HISTORY][-1] < self.tree.nodes[0][NodeData.VALUE]:
+        #         print(
+        #             f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
+        #         )
+        #         self._revise_values_for_level_1()
+        #         return
 
         node_length = int(len(sub_optimal_nodes) / 2)
         for i in range(node_length):
@@ -950,7 +950,7 @@ class MCTS_rearrangement:
                     # When you place well on your goal
                     if self.next_rearr_obj_num - self.prev_rearr_obj_num == 1:
                         print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                        return abs(reward) / ((depth + 2) / 2) * 5
+                        return abs(reward) / ((depth + 2) / 2) * 50
                     # When you place object on the target again
                     if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                         print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
@@ -959,7 +959,7 @@ class MCTS_rearrangement:
                     # When an object in the goal is moved to another place
                     if self.next_rearr_obj_num - self.prev_rearr_obj_num == -1:
                         print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                        return max(reward * 1 / (depth + 1) * 20, self.infeasible_reward)
+                        return max(reward * 1 / (depth + 1) * 100, self.infeasible_reward)
                     # When an object that was not at the goal position is moved to another location
                     if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                         print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
