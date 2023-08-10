@@ -76,7 +76,7 @@ def main():
     final_visited_node_num = []
 
     # final_optimal_trees = []
-    c_list = 10 ** np.linspace(-2, 2.0, 1)
+    c_list = 10 ** np.linspace(-2, 2.0, 10)
 
     flag = 0
 

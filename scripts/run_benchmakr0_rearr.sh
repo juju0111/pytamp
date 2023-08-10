@@ -9,17 +9,17 @@ python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth 
 
 python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed ${seed} --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo uct
 
-python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed 2 --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo bai_perturb
+python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed 4 --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo bai_perturb
 
-python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed 2 --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo bai_ucb
+python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed 4 --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo bai_ucb
 
-python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed 2 --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo uct
+python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed 4 --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo uct
 
-# python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed 5 --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo bai_perturb
+python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed 5 --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo bai_perturb
 
-# python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed 5 --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo bai_ucb
+python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed 5 --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo bai_ucb
 
-# python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed 5 --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo uct
+python3 -m examples.doosan.mcts.benchmark0_rearr_test --budgets 100 --max_depth ${max_depth} --debug_mode false --obj_num 6 --seed 5 --consider_next_scene ${consider_next_scene} --use_pick_action ${use_pick_action} --algo uct
 
 
 

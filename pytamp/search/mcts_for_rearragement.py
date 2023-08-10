@@ -915,7 +915,7 @@ class MCTS_rearrangement:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 2
 
         elif self.scene_mngr.scene.bench_num == 3:
-            inf_reward = self.infeasible_reward / (max(1, depth)) * 2
+            inf_reward = self.infeasible_reward / (max(1, depth)) * 10
 
         elif self.scene_mngr.scene.bench_num == 4:
             inf_reward = self.infeasible_reward / (max(1, depth)) * 2
