@@ -1109,13 +1109,14 @@ class MCTS_rearrangement:
             print(f"{sc.FAIL}Not found any sub optimal nodes.{sc.ENDC}")
             return
 
-        if self.tree.nodes[0][NodeData.SUCCESS]:
-            if self.tree.nodes[0][NodeData.VALUE_HISTORY][-1] < self.tree.nodes[0][NodeData.VALUE]:
-                print(
-                    f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
-                )
-                self._revise_values_for_level_1()
-                return
+        # print("Level 2 check ", self.tree.nodes[0][NodeData.SUCCESS])
+        # print("hist, max :", self.tree.nodes[0][NodeData.VALUE_HISTORY][-1], self.max_level_1_value)
+        if self.tree.nodes[0][NodeData.VALUE_HISTORY][-1] < self.max_level_1_value:
+            print(
+                f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
+            )
+            self._revise_values_for_level_1()
+            return
 
         for infeasible_node in self.infeasible_sub_nodes:
             if set(sub_optimal_nodes).issubset(infeasible_node):
@@ -1808,10 +1809,18 @@ class MCTS_rearrangement:
     def get_visit_node_num(self):
         count = 0
         for i in self.tree.nodes:
-            if self.tree.nodes[i]["visit"] > 1:
+            if self.tree.nodes[i]["visit"] > 0 and self.tree.nodes[i].get('type') == 'state':
                 count += 1
         return count
+    
+    def get_visit_node_num_each_depth(self):
+        visit_count_per_depth = [0 for i in range(self.max_depth)]
+        for i in self.tree.nodes:
+            if self.tree.nodes[i].get('visit') > 0 and self.tree.nodes[i].get('type') == 'state' :
+                visit_count_per_depth[self.tree.nodes[i].get('depth')-1] += 1
 
+        return visit_count_per_depth
+    
     def check_IK(
         self,
         q_pose,

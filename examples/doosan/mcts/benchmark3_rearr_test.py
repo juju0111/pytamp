@@ -65,6 +65,7 @@ final_place_all_object_poses = []
 ### new
 final_used_time = []
 final_visited_node_num = []
+final_visited_node_num_each_node = []
 
 c_list = 10 ** np.linspace(-2, 2.0, 10)
 
@@ -125,6 +126,8 @@ for idx, c in enumerate(c_list):
             [mcts.time_used_in_level_1, mcts.time_used_in_level_1_5, mcts.time_used_in_level_2]
         )
         final_visited_node_num.append([mcts.get_visit_node_num()])
+        final_visited_node_num_each_node.append(mcts.get_visit_node_num_each_depth())
+
     else:
         final_pnp_all_joint_paths.append([])
         final_pick_all_objects.append([])
@@ -137,6 +140,7 @@ for idx, c in enumerate(c_list):
             [mcts.time_used_in_level_1, mcts.time_used_in_level_1_5, mcts.time_used_in_level_2]
         )
         final_visited_node_num.append([mcts.get_visit_node_num()])
+        final_visited_node_num_each_node.append(mcts.get_visit_node_num_each_depth())
 
         # del mcts
         # print(final_optimal_trees)
@@ -182,6 +186,7 @@ with open(filename, "wb") as f:
         #  optimal_trees=final_optimal_trees
         final_used_time=final_used_time,
         final_visited_node_num=final_visited_node_num,
+        final_visited_node_num_each_node = final_visited_node_num_each_node,
         used_obj_num=[0],
     )
 print("Data saved at {}".format(filename))

@@ -69,14 +69,14 @@ def main():
     final_pnp_all_joint_paths = []
     final_pick_all_objects = []
     final_place_all_object_poses = []
-
+    final_visited_node_num_each_node = [] 
     ### new
     final_used_time = []
     used_obj_num = [args.obj_num]
     final_visited_node_num = []
 
     # final_optimal_trees = []
-    c_list = 10 ** np.linspace(-2, 2.0, 10)
+    c_list = 10 ** np.linspace(-2, 2.0, 1)
 
     flag = 0
 
@@ -134,6 +134,7 @@ def main():
                 [mcts.time_used_in_level_1, mcts.time_used_in_level_1_5, mcts.time_used_in_level_2]
             )
             final_visited_node_num.append([mcts.get_visit_node_num()])
+            final_visited_node_num_each_node.append(mcts.get_visit_node_num_each_depth())
 
         else:
             final_pnp_all_joint_paths.append([])
@@ -147,6 +148,7 @@ def main():
                 [mcts.time_used_in_level_1, mcts.time_used_in_level_1_5, mcts.time_used_in_level_2]
             )
             final_visited_node_num.append([mcts.get_visit_node_num()])
+            final_visited_node_num_each_node.append(mcts.get_visit_node_num_each_depth())
 
         # del mcts
         # print(final_optimal_trees)
@@ -192,6 +194,7 @@ def main():
             #  optimal_trees=final_optimal_trees
             final_used_time=final_used_time,
             final_visited_node_num=final_visited_node_num,
+            final_visited_node_num_each_node = final_visited_node_num_each_node,
             used_obj_num=used_obj_num,
         )
     print("Data saved at {}".format(filename))
