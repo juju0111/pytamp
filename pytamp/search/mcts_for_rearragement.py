@@ -944,26 +944,43 @@ class MCTS_rearrangement:
                 self.next_rearr_obj_num = len(next_state.rearranged_object)
 
                 if self.use_pick_action:
-                    depth /= 2
-
-                if next_state_is_success:
-                    # When you place well on your goal
-                    if self.next_rearr_obj_num - self.prev_rearr_obj_num == 1:
-                        print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                        return abs(reward) / ((depth + 2) / 2) * 50
-                    # When you place object on the target again
-                    if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
-                        print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
-                        return reward
+                    if next_state_is_success:
+                        # When you place well on your goal
+                        if self.next_rearr_obj_num - self.prev_rearr_obj_num == 1:
+                            print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
+                            return abs(reward) / ((depth + 1)) * 100
+                        # When you place object on the target again
+                        if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
+                            print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
+                            return reward
+                    else:
+                        # When an object in the goal is moved to another place
+                        if self.next_rearr_obj_num - self.prev_rearr_obj_num == -1:
+                            print(f"{sc.FAIL}Bad Action{sc.ENDC}")
+                            return max(reward * 1 / (depth + 1) * 100, self.infeasible_reward)
+                        # When an object that was not at the goal position is moved to another location
+                        if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
+                            print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
+                            return reward
                 else:
-                    # When an object in the goal is moved to another place
-                    if self.next_rearr_obj_num - self.prev_rearr_obj_num == -1:
-                        print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                        return max(reward * 1 / (depth + 1) * 100, self.infeasible_reward)
-                    # When an object that was not at the goal position is moved to another location
-                    if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
-                        print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
-                        return reward
+                    if next_state_is_success:
+                        # When you place well on your goal
+                        if self.next_rearr_obj_num - self.prev_rearr_obj_num == 1:
+                            print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
+                            return abs(reward) / ((depth + 1)) * 50
+                        # When you place object on the target again
+                        if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
+                            print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
+                            return reward
+                    else:
+                        # When an object in the goal is moved to another place
+                        if self.next_rearr_obj_num - self.prev_rearr_obj_num == -1:
+                            print(f"{sc.FAIL}Bad Action{sc.ENDC}")
+                            return max(reward * 1 / (depth + 1) * 50, self.infeasible_reward)
+                        # When an object that was not at the goal position is moved to another location
+                        if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
+                            print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
+                            return reward
             else:
                 # when do pick
                 return 0

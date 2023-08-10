@@ -12,12 +12,8 @@ from pytamp.search.mcts_for_rearragement import MCTS_rearrangement
 def get_parser():
     parser = argparse.ArgumentParser(description="Test Rearragement 1.")
     parser.add_argument("--budgets", metavar="T", type=int, default=100, help="Horizon")
-    parser.add_argument(
-        "--max_depth", metavar="H", type=int, default=12, help="Max depth"
-    )
-    parser.add_argument(
-        "--seed", metavar="i", type=int, default=3, help="A random seed"
-    )
+    parser.add_argument("--max_depth", metavar="H", type=int, default=12, help="Max depth")
+    parser.add_argument("--seed", metavar="i", type=int, default=3, help="A random seed")
     parser.add_argument(
         "--algo",
         metavar="alg",
@@ -35,7 +31,7 @@ def get_parser():
 
     parser.add_argument("--obj_num", metavar="N", type=int, default=6, help="Box Number(6 or less)")
     parser.add_argument(
-    "--grasp_use_num", metavar="N", type=int, default=7, help="How many grasp consider ?"
+        "--grasp_use_num", metavar="N", type=int, default=7, help="How many grasp consider ?"
     )
     parser.add_argument(
         "--consider_next_scene",
@@ -79,7 +75,6 @@ def main():
     used_obj_num = [args.obj_num]
     final_visited_node_num = []
 
-
     # final_optimal_trees = []
     c_list = 10 ** np.linspace(-2, 2.0, 10)
 
@@ -92,12 +87,9 @@ def main():
     elif args.use_pick_action:
         flag = 0
 
-
     for idx, c in enumerate(c_list):
         object_names, init_scene, goal_scene = make_scene()
-        rearrangement1 = Rearrange1(
-            "panda", object_names, init_scene, goal_scene, is_pyplot=False
-        )
+        rearrangement1 = Rearrange1("panda", object_names, init_scene, goal_scene, is_pyplot=False)
 
         mcts = MCTS_rearrangement(
             scene_mngr=rearrangement1.scene_mngr,
@@ -198,6 +190,7 @@ def main():
             used_obj_num=used_obj_num,
         )
     print("Data saved at {}".format(filename))
+
 
 if __name__ == "__main__":
     main()
