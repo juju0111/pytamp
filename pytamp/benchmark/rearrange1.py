@@ -193,8 +193,8 @@ def make_scene():
     args.objects.append("bottle.stl")
     args.objects.append("can.stl")
     # args.objects.append("can.stl")
-    # args.objects.append("milk.stl")
-    # args.objects.append("cereal.stl")
+    args.objects.append("milk.stl")
+    args.objects.append("cereal.stl")
 
     obj_dict = {}
     object_meshes = []
