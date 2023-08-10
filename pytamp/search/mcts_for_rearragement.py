@@ -265,15 +265,16 @@ class MCTS_rearrangement:
 
                 if not self.has_aleardy_level_1_optimal_nodes:
                     if self.use_pick_action:
-                        level_2_start_time = time.time()
-                        self._level_wise_2_optimize(success_level_1_sub_nodes)
-                        self.time_used_in_level_2 += time.time() - level_2_start_time
+                        if self._do_level_2:
+                            level_2_start_time = time.time()
+                            self._level_wise_2_optimize(success_level_1_sub_nodes)
+                            self.time_used_in_level_2 += time.time() - level_2_start_time
 
-                        self._update_success_level_1_and_2(success_level_1_sub_nodes)
+                            self._update_success_level_1_and_2(success_level_1_sub_nodes)
 
-                        self.values_for_level_2.append(
-                            self.get_max_value_level_2(success_level_1_sub_nodes)
-                        )
+                            self.values_for_level_2.append(
+                                self.get_max_value_level_2(success_level_1_sub_nodes)
+                            )
 
                     # TODO
                     else:
@@ -952,7 +953,7 @@ class MCTS_rearrangement:
                         # When you place object on the target again
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                             print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
-                            return reward
+                            return reward 
                     else:
                         # When an object in the goal is moved to another place
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == -1:
@@ -961,7 +962,7 @@ class MCTS_rearrangement:
                         # When an object that was not at the goal position is moved to another location
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                             print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
-                            return reward
+                            return reward 
                 else:
                     if next_state_is_success:
                         # When you place well on your goal
@@ -971,7 +972,7 @@ class MCTS_rearrangement:
                         # When you place object on the target again
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                             print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
-                            return reward
+                            return reward 
                     else:
                         # When an object in the goal is moved to another place
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == -1:
@@ -980,7 +981,7 @@ class MCTS_rearrangement:
                         # When an object that was not at the goal position is moved to another location
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                             print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
-                            return reward
+                            return reward 
             else:
                 # when do pick
                 return 0
