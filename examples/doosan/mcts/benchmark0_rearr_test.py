@@ -76,7 +76,7 @@ def main():
     final_visited_node_num = []
 
     # final_optimal_trees = []
-    c_list = 10 ** np.linspace(-2, 2.0, 2)
+    c_list = 10 ** np.linspace(-2, 2.0, 10)
 
     flag = 0
 
@@ -105,7 +105,7 @@ def main():
         )
 
         mcts.only_optimize_1 = False
-        mcts._do_level_2 = False
+        # mcts._do_level_2 = False
         
         start_time = time.time()
         for i in range(budgets):
