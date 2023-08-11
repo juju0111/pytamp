@@ -124,7 +124,7 @@ class Benchmark1_for_rearr(Benchmark):
         )
         F_box_pose = Transform(
             pos=np.array(
-                [0.8, 0, table_height + abs(self.box_mesh.bounds[0][2]) + off_set + box_height * 2]
+                [0.8, 0, table_height + abs(self.box_mesh.bounds[0][2]) + off_set + box_height * 2 + 0.001]
             )
         )
         G_box_pose = Transform(

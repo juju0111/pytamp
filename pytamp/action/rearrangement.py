@@ -68,6 +68,7 @@ class RearrangementAction(ActivityBase):
                 logical_state in self.scene_mngr.scene.logical_states[obj_name]
                 for logical_state in self.filter_logical_states
             ):
+                # print(obj_name)
                 action_level_1 = self.get_action_level_1_for_single_object(
                     obj_name=obj_name, scene_for_sample=scene_for_sample, scene=scene
                 )
@@ -148,13 +149,13 @@ class RearrangementAction(ActivityBase):
                         else:
                             break
 
-                    # print(sup_obj_name)
+                    # print(obj_name, sup_obj_name)
                     ##
-                    if "box" in sup_obj_name and "box" in obj_name:
-                        sup_obj_num = ord(sup_obj_name.split("_")[0])
-                        held_obj_num = ord(obj_name.split("_")[0])
-                        if held_obj_num <= sup_obj_num:
-                            continue
+                    # if "box" in sup_obj_name and "box" in obj_name:
+                    #     sup_obj_num = ord(sup_obj_name.split("_")[0])
+                    #     held_obj_num = ord(obj_name.split("_")[0])
+                    #     if held_obj_num <= sup_obj_num:
+                    #         continue
                     # if sup_obj_name == obj_name:
                     #     continue
                     location_obj = list(
@@ -246,10 +247,13 @@ class RearrangementAction(ActivityBase):
             )
             action = self.get_action(obj_name, release_poses_not_collision)
         else:
+            # print(location)
             obj_poses_not_collision = list(self.get_goal_location_not_collision(obj_name, location))
             # print("Not collision ", obj_poses_not_collision)
             action = self.get_action_only_rearr(obj_name, obj_poses_not_collision)
             # print("action : ", action)
+        
+        # print(obj_name, sup_obj_name, action)
         return action
 
     # for level wise - 1.5 (Consider gripper collision, when using contact_graspnet)
@@ -853,7 +857,7 @@ class RearrangementAction(ActivityBase):
                 result, _ = self.scene_mngr.obj_collision_mngr.in_collision_internal(
                     return_names=True
                 )
-                # print(result, _)
+                # print("Collision check : ", result, _)
                 self.scene_mngr.set_object_pose(obj_name, current_location)
 
                 if result:
