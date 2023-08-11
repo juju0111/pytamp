@@ -899,7 +899,7 @@ class MCTS_rearrangement:
         depth=None,
         is_terminal: bool = False,
     ) -> float:
-        reward = -0.1
+        reward = -1
         if is_terminal:
             print(f"Terminal State! Reward is {self.goal_reward}")
             return self.goal_reward
@@ -949,7 +949,7 @@ class MCTS_rearrangement:
                         # When you place well on your goal
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 1:
                             print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                            return abs(reward) / ((depth + 1)) * 100
+                            return abs(reward) / ((depth + 1)) * 10
                         # When you place object on the target again
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                             print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
@@ -958,7 +958,7 @@ class MCTS_rearrangement:
                         # When an object in the goal is moved to another place
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == -1:
                             print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                            return max(reward * 1 / (depth + 1) * 100, self.infeasible_reward)
+                            return max(reward * 1 / (depth + 1) * 10, self.infeasible_reward)
                         # When an object that was not at the goal position is moved to another location
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                             print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
@@ -968,7 +968,7 @@ class MCTS_rearrangement:
                         # When you place well on your goal
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 1:
                             print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                            return abs(reward) / ((depth + 1)) * 50
+                            return abs(reward) / ((depth + 1)) * 5
                         # When you place object on the target again
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                             print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
@@ -977,7 +977,7 @@ class MCTS_rearrangement:
                         # When an object in the goal is moved to another place
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == -1:
                             print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                            return max(reward * 1 / (depth + 1) * 50, self.infeasible_reward)
+                            return max(reward * 1 / (depth + 1) * 5, self.infeasible_reward)
                         # When an object that was not at the goal position is moved to another location
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                             print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
@@ -1005,10 +1005,10 @@ class MCTS_rearrangement:
                 if next_state_is_success:
                     if next_state.stacked_box_num - prev_stacked_box_num == 1:
                         print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                        return abs(reward) * 1 / (depth + 1) * 100
+                        return abs(reward) * 1 / (depth + 1) * 10
                 if next_state.stacked_box_num - prev_stacked_box_num == -1:
                     print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                    return max(reward * 1 / (depth + 1) * 200, self.infeasible_reward)
+                    return max(reward * 1 / (depth + 1) * 20, self.infeasible_reward)
 
         # if self.scene_mngr.scene.bench_num == 2:
         #     logical_action_type = cur_logical_action[self.pick_action.info.TYPE]
