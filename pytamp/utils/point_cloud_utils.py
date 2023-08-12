@@ -30,7 +30,7 @@ def get_obj_point_clouds(sample_scene: Make_Scene, scene: Scene, manipulate_obj_
         if pass_bool:
             continue
 
-        if name == "shelves":
+        if name in ["shelves", "clearbox"]:
             sample_num = 15000
             copied_mesh = deepcopy(i.gparam)
             # copied_mesh.apply_translation(-i.gparam.center_mass)
