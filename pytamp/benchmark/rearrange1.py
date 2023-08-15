@@ -172,8 +172,8 @@ def make_scene():
         args = easydict.EasyDict(
             {
                 "objects": [
-                    # "/home/juju/contact_graspnet/acronym/grasps/Candle_b94fcdffbd1befa57f5e345e9a3e5d44_0.012740999337464653.h5",
-                    # "/home/juju/contact_graspnet/acronym/grasps/Canister_714320da4aafcb4a47be2353d2b2403b_0.00023318612778400807.h5",
+                    "/home/juju/contact_graspnet/acronym/grasps/Candle_b94fcdffbd1befa57f5e345e9a3e5d44_0.012740999337464653.h5",
+                    "/home/juju/contact_graspnet/acronym/grasps/Canister_714320da4aafcb4a47be2353d2b2403b_0.00023318612778400807.h5",
                     # "/home/juju/contact_graspnet/acronym/grasps/Bowl_95ac294f47fd7d87e0b49f27ced29e3_0.0008357974151618388.h5",
                     # "/home/juju/contact_graspnet/acronym/grasps/Xbox360_435f39e98d2260f0d6e21b8525c3f8bb_0.002061950217848804.h5"
                 ],
@@ -193,7 +193,7 @@ def make_scene():
     args.objects.append("bottle.stl")
     # args.objects.append("bottle.stl")
 
-    args.objects.append("can.stl")
+    # args.objects.append("can.stl")
     # args.objects.append("can.stl")
     # args.objects.append("milk.stl")
     args.objects.append("milk.stl")
@@ -213,7 +213,7 @@ def make_scene():
                 object_meshes.append(get_object_mesh(o, 0.05))
                 object_names.append(get_obj_name(obj_dict, o))
             else:
-                object_meshes.append(get_object_mesh(o))
+                object_meshes.append(get_object_mesh(o,0.9))
                 object_names.append(get_obj_name(obj_dict, o))
 
     # for PYTAMP
@@ -235,9 +235,10 @@ def make_scene():
         object_meshes,
         support_names,
         support_meshes,
-        for_goal_scene=False,
-        # for_goal_scene=True,
-        gaussian=[-0.1, 0, 0.15, 0.2],
+        # for_goal_scene=False,
+        for_goal_scene=True,
+        gaussian=[-0.2, -0.2, 0.2, 0.2],
+        # gaussian=[-0.1, 0, 0.15, 0.2],
     )
     goal_scene = Make_Scene.random_arrangement(
         object_names,
@@ -245,6 +246,7 @@ def make_scene():
         support_names,
         support_meshes,
         for_goal_scene=True,
+        # gaussian=[-0.22, 0.15, 0.2, 0.2],
         gaussian=[-0.2, 0, 0.1, 0.2],
     )
 

@@ -60,7 +60,7 @@ class MCTS_rearrangement:
             # robot action은 우선 패스하고 object transition만 고려해서 Goal Scene을 만족하는
             # state가 나올 때 까지 search!!
             self.rearr_action = RearrangementAction(scene_mngr)
-            self.pick_action = PickAction(scene_mngr, n_contacts=5, n_directions=7)
+            self.pick_action = PickAction(scene_mngr, n_contacts=3, n_directions=7)
             # self.place_action = PlaceAction(
             #     scene_mngr,
             #     n_samples_held_obj=0,
@@ -357,7 +357,8 @@ class MCTS_rearrangement:
             self._update_value(cur_state_node, reward)
             # self.render_state("cur_state", cur_state, close_gripper=False)
             print(f"{sc.WARNING}Exceeded the maximum depth!!{sc.ENDC}")
-            return 0
+            # return 0
+            return -1
 
         # ? Select Logical Action
         # *======================================================================================================================== #
@@ -949,11 +950,11 @@ class MCTS_rearrangement:
                         # When you place well on your goal
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 1:
                             print(f"{sc.COLOR_CYAN}Good Action{sc.ENDC}")
-                            return abs(reward) / ((depth + 1)) * 10
+                            return abs(reward) / ((depth + 1)) * 20
                         # When you place object on the target again
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                             print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
-                            return reward 
+                            return reward
                     else:
                         # When an object in the goal is moved to another place
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == -1:
@@ -962,7 +963,7 @@ class MCTS_rearrangement:
                         # When an object that was not at the goal position is moved to another location
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                             print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
-                            return reward 
+                            return reward
                 else:
                     if next_state_is_success:
                         # When you place well on your goal
@@ -972,7 +973,7 @@ class MCTS_rearrangement:
                         # When you place object on the target again
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                             print(f"{sc.COLOR_BLUE}not bad Action{sc.ENDC}")
-                            return reward 
+                            return reward
                     else:
                         # When an object in the goal is moved to another place
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == -1:
@@ -981,7 +982,7 @@ class MCTS_rearrangement:
                         # When an object that was not at the goal position is moved to another location
                         if self.next_rearr_obj_num - self.prev_rearr_obj_num == 0:
                             print(f"{sc.COLOR_BLUE}placed another place not goal{sc.ENDC}")
-                            return reward 
+                            return reward
             else:
                 # when do pick
                 return 0
@@ -1109,15 +1110,6 @@ class MCTS_rearrangement:
             print(f"{sc.FAIL}Not found any sub optimal nodes.{sc.ENDC}")
             return
 
-        # print("Level 2 check ", self.tree.nodes[0][NodeData.SUCCESS])
-        # print("hist, max :", self.tree.nodes[0][NodeData.VALUE_HISTORY][-1], self.max_level_1_value)
-        if self.tree.nodes[0][NodeData.VALUE_HISTORY][-1] < self.max_level_1_value:
-            print(
-                f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}"
-            )
-            self._revise_values_for_level_1()
-            return
-
         for infeasible_node in self.infeasible_sub_nodes:
             if set(sub_optimal_nodes).issubset(infeasible_node):
                 print(
@@ -1126,6 +1118,13 @@ class MCTS_rearrangement:
                 self._revise_values_for_level_1()
                 print("Max_value level 1 at failed : ", self.max_level_1_value)
                 return
+
+        # print("Level 2 check ", self.tree.nodes[0][NodeData.SUCCESS])
+        # print("hist, max :", self.tree.nodes[0][NodeData.VALUE_HISTORY][-1], self.max_level_1_value)
+        if self.tree.nodes[0][NodeData.VALUE_HISTORY][-1] < self.max_level_1_value:
+            print(f"{sc.FAIL}A value of this optimal nodes is lower than maximum value.{sc.ENDC}")
+            self._revise_values_for_level_1()
+            return
 
         self.show_logical_actions(sub_optimal_nodes)
 
@@ -1809,18 +1808,18 @@ class MCTS_rearrangement:
     def get_visit_node_num(self):
         count = 0
         for i in self.tree.nodes:
-            if self.tree.nodes[i]["visit"] > 0 and self.tree.nodes[i].get('type') == 'state':
+            if self.tree.nodes[i]["visit"] > 0 and self.tree.nodes[i].get("type") == "state":
                 count += 1
         return count
-    
+
     def get_visit_node_num_each_depth(self):
         visit_count_per_depth = [0 for i in range(self.max_depth)]
         for i in self.tree.nodes:
-            if self.tree.nodes[i].get('visit') > 0 and self.tree.nodes[i].get('type') == 'state' :
-                visit_count_per_depth[self.tree.nodes[i].get('depth')-1] += 1
+            if self.tree.nodes[i].get("visit") > 0 and self.tree.nodes[i].get("type") == "state":
+                visit_count_per_depth[self.tree.nodes[i].get("depth") - 1] += 1
 
         return visit_count_per_depth
-    
+
     def check_IK(
         self,
         q_pose,

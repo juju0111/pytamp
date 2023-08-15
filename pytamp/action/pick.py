@@ -2,7 +2,7 @@ import numpy as np
 from collections import OrderedDict
 from copy import deepcopy
 import random
-
+import time
 from pykin.utils import mesh_utils as m_utils
 from pykin.utils import plot_utils as p_utils
 from pytamp.action.activity import ActivityBase
@@ -506,6 +506,7 @@ class PickAction(ActivityBase):
         cnt = 0
         margin = 1
         surface_point_list = []
+        start_time = time.time()
         while cnt < self.n_contacts:
             # obj mesh에서 obj_mesh_face에서 weight를 주지 않았으므로 point를 random sample함.
             surface_points, normals = self.get_surface_points_from_mesh(copied_mesh, 2)
@@ -551,6 +552,9 @@ class PickAction(ActivityBase):
                 if is_success:
                     cnt += 1
                     surface_point_list.append(surface_points)
+
+            if time.time() - start_time > 10:
+                return surface_point_list
 
         return surface_point_list
 

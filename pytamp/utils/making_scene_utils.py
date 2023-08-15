@@ -276,6 +276,7 @@ class Make_Scene(Scene_ACRONYM):
         """
         if "cereal" in obj_id:
             for_goal_scene = True
+
         success, placement_T, sup_obj_name = self.find_object_placement(
             obj_mesh,
             max_iter,

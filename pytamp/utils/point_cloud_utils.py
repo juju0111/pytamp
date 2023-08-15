@@ -37,7 +37,7 @@ def get_obj_point_clouds(sample_scene: Make_Scene, scene: Scene, manipulate_obj_
             copied_mesh.apply_transform(i.h_mat)
         else:
             copied_mesh = deepcopy(i.gparam)
-            copied_mesh.apply_translation(-i.gparam.center_mass)
+            # copied_mesh.apply_translation(-i.gparam.center_mass)
             copied_mesh.apply_transform(i.h_mat)
 
         # random sampling으로 mesh 위 point cloud 일부 가져오기
