@@ -194,7 +194,7 @@ def make_scene():
     # args.objects.append("bottle.stl")
 
     # args.objects.append("can.stl")
-    # args.objects.append("can.stl")
+    args.objects.append("can.stl")
     # args.objects.append("milk.stl")
     args.objects.append("milk.stl")
     args.objects.append("cereal.stl")
@@ -213,7 +213,7 @@ def make_scene():
                 object_meshes.append(get_object_mesh(o, 0.05))
                 object_names.append(get_obj_name(obj_dict, o))
             else:
-                object_meshes.append(get_object_mesh(o,0.9))
+                object_meshes.append(get_object_mesh(o, 0.9))
                 object_names.append(get_obj_name(obj_dict, o))
 
     # for PYTAMP

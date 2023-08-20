@@ -19,7 +19,6 @@ from pytamp.utils.making_scene_utils import Make_Scene
 from pykin.utils import plot_utils as p_utils
 from pykin.utils import mesh_utils as m_utils
 from pykin.utils.kin_utils import ShellColors as sc
-from pytamp.utils.contact_graspnet_utils import Grasp_Using_Contact_GraspNet
 
 
 class MCTS_rearrangement:
@@ -34,6 +33,7 @@ class MCTS_rearrangement:
         gamma: float = 1,
         debug_mode=False,
         use_pick_action=False,
+        grasp_generator_name="contact_graspnet",
         consider_next_scene=True,
         do_level_2=True,
         grasp_use_num: int = 5,
@@ -43,6 +43,7 @@ class MCTS_rearrangement:
         self.scene_mngr.is_debug_mode = debug_mode
         self.state = scene_mngr.scene
         self.use_pick_action = use_pick_action
+        self.grasp_generator_name = grasp_generator_name
         self.consider_next_scene = consider_next_scene
         self._do_level_2 = do_level_2
         self.grasp_use_num = grasp_use_num
@@ -175,11 +176,30 @@ class MCTS_rearrangement:
         self.only_optimize_1 = False
         self.has_aleardy_level_1_optimal_nodes = False
         if not use_pick_action:
-            self.grasp_generator = Grasp_Using_Contact_GraspNet(
-                self.rearr_action,
-                scene_mngr.scene.robot.robot_name,
-                self.scene_mngr.scene.bench_num,
-            )
+            if self.grasp_generator_name == "contact_graspnet":
+                from pytamp.utils.contact_graspnet_utils import Grasp_Using_Contact_GraspNet
+
+                self.grasp_generator = Grasp_Using_Contact_GraspNet(
+                    self.rearr_action,
+                    scene_mngr.scene.robot.robot_name,
+                    self.scene_mngr.scene.bench_num,
+                )
+            elif self.grasp_generator_name == "scale_balance_grasp":
+                from pytamp.utils.contact_graspnet_utils import Grasp_Using_Scale_Balance_GraspNet
+
+                self.grasp_generator = Grasp_Using_Scale_Balance_GraspNet(
+                    self.rearr_action,
+                    scene_mngr.scene.robot.robot_name,
+                    self.scene_mngr.scene.bench_num,
+                )
+            elif self.grasp_generator_name == "fgc_grasp":
+                from pytamp.utils.contact_graspnet_utils import Grasp_Using_FGC_GraspNet
+
+                self.grasp_generator = Grasp_Using_FGC_GraspNet(
+                    self.rearr_action,
+                    scene_mngr.scene.robot.robot_name,
+                    self.scene_mngr.scene.bench_num,
+                )
 
     def _create_tree(self, state: Scene):
         tree = nx.DiGraph()
@@ -279,10 +299,10 @@ class MCTS_rearrangement:
                     # TODO
                     else:
                         level_1_5_start_time = time.time()
-                        self._level_wise_between_1_and_2_optimize(
-                            success_level_1_sub_nodes, self.consider_next_scene
-                        )
-                        self.time_used_in_level_1_5 += time.time() - level_1_5_start_time
+                        # self._level_wise_between_1_and_2_optimize(
+                        #     success_level_1_sub_nodes, self.consider_next_scene
+                        # )
+                        # self.time_used_in_level_1_5 += time.time() - level_1_5_start_time
 
                         if self._do_level_2:
                             level_2_start_time = time.time()
