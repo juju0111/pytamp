@@ -184,6 +184,7 @@ class MCTS_rearrangement:
                     scene_mngr.scene.robot.robot_name,
                     self.scene_mngr.scene.bench_num,
                 )
+                self.chance = 3
             elif self.grasp_generator_name == "scale_balance_grasp":
                 from pytamp.utils.contact_graspnet_utils import Grasp_Using_Scale_Balance_GraspNet
 
@@ -192,6 +193,7 @@ class MCTS_rearrangement:
                     scene_mngr.scene.robot.robot_name,
                     self.scene_mngr.scene.bench_num,
                 )
+                self.chance = 5
             elif self.grasp_generator_name == "fgc_grasp":
                 from pytamp.utils.contact_graspnet_utils import Grasp_Using_FGC_GraspNet
 
@@ -200,6 +202,7 @@ class MCTS_rearrangement:
                     scene_mngr.scene.robot.robot_name,
                     self.scene_mngr.scene.bench_num,
                 )
+                self.chance = 7
 
     def _create_tree(self, state: Scene):
         tree = nx.DiGraph()
@@ -299,10 +302,10 @@ class MCTS_rearrangement:
                     # TODO
                     else:
                         level_1_5_start_time = time.time()
-                        # self._level_wise_between_1_and_2_optimize(
-                        #     success_level_1_sub_nodes, self.consider_next_scene
-                        # )
-                        # self.time_used_in_level_1_5 += time.time() - level_1_5_start_time
+                        self._level_wise_between_1_and_2_optimize(
+                            success_level_1_sub_nodes, self.consider_next_scene
+                        )
+                        self.time_used_in_level_1_5 += time.time() - level_1_5_start_time
 
                         if self._do_level_2:
                             level_2_start_time = time.time()
@@ -483,9 +486,9 @@ class MCTS_rearrangement:
                 continue
 
             print(f"{sc.COLOR_BROWN}{obj_to_manipulate}{sc.ENDC}")
-            chance_ = 3
+            chance_ = deepcopy(self.chance)
             grasp_poses_not_collision = None
-            for _ in range(3):
+            for _ in range(self.chance):
                 if use_next_scene:
                     grasps = self.grasp_generator.get_grasp(
                         init_scene=self.init_scene,

@@ -6,7 +6,7 @@ from pykin.utils.mesh_utils import get_object_mesh
 from pykin.utils.transform_utils import get_h_mat
 from pytamp.benchmark.benchmark import Benchmark
 
-import easydict
+import easydict, os
 from copy import deepcopy
 
 from pytamp.utils.making_scene_utils import load_mesh, get_obj_name, Make_Scene
@@ -133,15 +133,17 @@ class Benchmark2_for_rearr(Benchmark):
     def make_scene(
         self,
     ):
+        home_path = os.path.join(os.path.expanduser('~'), 'contact_graspnet/acronym/')
+
         def custom_parser():
             args = easydict.EasyDict(
                 {
                     "objects": [
-                        "/home/juju/contact_graspnet/acronym/grasps/TrashBin_e3484284e1f301077d9a3c398c7b4709_0.024885138038591482.h5"
+                        home_path + "grasps/TrashBin_e3484284e1f301077d9a3c398c7b4709_0.024885138038591482.h5"
                     ],
-                    "support": "/home/juju/contact_graspnet/acronym/grasps/3Shelves_22fbb23ca13c345b51887beb710d662a_0.0024196631371593983.h5",
+                    "support": home_path + "grasps/3Shelves_22fbb23ca13c345b51887beb710d662a_0.0024196631371593983.h5",
                     "num_grasps": 5,
-                    "mesh_root": "/home/juju/contact_graspnet/acronym/",
+                    "mesh_root": home_path,
                     "support_scale": 0.025,
                 }
             )

@@ -138,9 +138,9 @@ class Grasp_Using_AI_model(metaclass=ABCMeta):
 class Grasp_Using_Scale_Balance_GraspNet(Grasp_Using_AI_model):
     def __init__(self, action, robot_name, bench_num=0):
         super().__init__(action, robot_name, bench_num)
-
+        home_path = os.path.expanduser('~')
         self.ROOT_DIR = os.path.dirname(
-            "/home/juju/scale_balance_grasp_files/Scale-Balanced-Grasp/"
+            home_path + "/scale_balance_grasp_files/Scale-Balanced-Grasp/"
         )
         sys.path.append(os.path.join(self.ROOT_DIR, "models"))
         sys.path.append(os.path.join(self.ROOT_DIR, "utils"))
@@ -211,10 +211,12 @@ class Grasp_Using_Scale_Balance_GraspNet(Grasp_Using_AI_model):
         self.w_T_cam = w_T_cam.dot(m_)
 
     def argparse(self):
+        home_path =  os.path.expanduser("~")
+
         parser = argparse.ArgumentParser()
         parser.add_argument(
             "--dataset_root",
-            default="/home/juju/scale_balance_grasp_files/Scale-Balanced-Grasp/dataset/graspnet",
+            default=home_path + "/scale_balance_grasp_files/Scale-Balanced-Grasp/dataset/graspnet",
             help="Dataset root",
         )
         parser.add_argument(
@@ -456,8 +458,8 @@ class Grasp_Using_Scale_Balance_GraspNet(Grasp_Using_AI_model):
 class Grasp_Using_FGC_GraspNet(Grasp_Using_AI_model):
     def __init__(self, action, robot_name, bench_num=0):
         super().__init__(action, robot_name, bench_num)
-
-        self.ROOT_DIR = os.path.dirname("/home/juju/scale_balance_grasp_files/FGC-GraspNet/")
+        home_path = os.path.expanduser("~")
+        self.ROOT_DIR = os.path.dirname(home_path + "/scale_balance_grasp_files/FGC-GraspNet/")
         sys.path.append(os.path.join(self.ROOT_DIR, "models"))
         sys.path.append(os.path.join(self.ROOT_DIR, "utils"))
         print(sys.path)
@@ -517,10 +519,11 @@ class Grasp_Using_FGC_GraspNet(Grasp_Using_AI_model):
         self.w_T_cam = w_T_cam.dot(m_)
 
     def argparse(self):
+        home_path = os.path.expanduser("~")
         parser = argparse.ArgumentParser()
         parser.add_argument(
             "--checkpoint_path",
-            default="/home/juju/scale_balance_grasp_files/FGC-GraspNet/log/realsense_checkpoint.tar",
+            default=home_path + "/scale_balance_grasp_files/FGC-GraspNet/log/realsense_checkpoint.tar",
             help="Model checkpoint path",
         )
         parser.add_argument(

@@ -23,6 +23,14 @@ def get_parser():
         help="Choose one (bai_perturb, bai_ucb, uct)",
     )
     parser.add_argument(
+        "--grasp_generator",
+        metavar="grasp_generator",
+        type=str,
+        default="None",
+        choices=["contact_graspnet", "scale_balance_grasp", "fgc_grasp"],
+        help="Choose one (contact_graspnet, scale_balance_grasp, fgc_grasp)",
+    )
+    parser.add_argument(
         "--debug_mode",
         default=False,
         type=lambda x: (str(x).lower() == "true"),
@@ -97,6 +105,7 @@ def main():
             sampling_method=args.algo,
             budgets=args.budgets,
             max_depth=args.max_depth,
+            grasp_generator_name=args.grasp_generator,
             c=c,
             debug_mode=args.debug_mode,
             use_pick_action=args.use_pick_action,
@@ -162,16 +171,16 @@ def main():
     num = 0
     filename = (
         directory_name
-        + "/benchmark0_rearr_test_algo({:})_budget({:})_seed({:})_obj({})_flag({})_{}.npy".format(
-            algo, budgets, seed, number, flag, num
+        + "/benchmark0_rearr_test_algo({:})_budget({:})_seed({:})_obj({})_flag({})_{}_{}.npy".format(
+            algo, budgets, seed, number, flag, args.grasp_generator ,num
         )
     )
 
     while os.path.exists(filename):
         filename = (
             directory_name
-            + "/benchmark0_rearr_test_algo({:})_budget({:})_seed({:})_obj({})_flag({})_{}.npy".format(
-                algo, budgets, seed, number, flag, num
+            + "/benchmark0_rearr_test_algo({:})_budget({:})_seed({:})_obj({})_flag({})_{}_{}.npy".format(
+                algo, budgets, seed, number, flag, args.grasp_generator, num
             )
         )
         num += 1

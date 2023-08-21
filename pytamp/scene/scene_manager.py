@@ -698,8 +698,9 @@ class SceneManager:
 
         if is_save:
             import os
+            home_path = os.path.expanduser('~')
 
-            os.chdir("/home/juju/pytamp/examples/doosan/action/rearrangement1/movie_dir")
+            os.chdir(home_path + "/pytamp/examples/doosan/action/rearrangement1/movie_dir")
             print("PWD : ", os.getcwd())
             if gif:
                 writergif = animation.PillowWriter(fps=30)

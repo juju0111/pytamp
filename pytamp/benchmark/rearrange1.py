@@ -6,8 +6,7 @@ from pytamp.benchmark.benchmark import Benchmark
 from pytamp.utils.making_scene_utils import Make_Scene
 from pytamp.scene.scene_manager import SceneManager
 
-import trimesh
-import easydict
+import easydict, os
 from copy import deepcopy
 
 from pytamp.utils.making_scene_utils import load_mesh, get_obj_name, Make_Scene
@@ -167,19 +166,21 @@ class Rearrange1(Benchmark):
 
 
 def make_scene():
+    home_path = os.path.join(os.path.expanduser('~'), 'contact_graspnet/acronym/')
+
     def custom_parser():
         # object는 parser.add_argument( ~ , nargs="+") , nargs="+" 때문에 list로 arg 셋팅함
         args = easydict.EasyDict(
             {
                 "objects": [
-                    "/home/juju/contact_graspnet/acronym/grasps/Candle_b94fcdffbd1befa57f5e345e9a3e5d44_0.012740999337464653.h5",
-                    "/home/juju/contact_graspnet/acronym/grasps/Canister_714320da4aafcb4a47be2353d2b2403b_0.00023318612778400807.h5",
-                    # "/home/juju/contact_graspnet/acronym/grasps/Bowl_95ac294f47fd7d87e0b49f27ced29e3_0.0008357974151618388.h5",
-                    # "/home/juju/contact_graspnet/acronym/grasps/Xbox360_435f39e98d2260f0d6e21b8525c3f8bb_0.002061950217848804.h5"
+                    # home_path + "grasps/Candle_b94fcdffbd1befa57f5e345e9a3e5d44_0.012740999337464653.h5",
+                    # home_path + "grasps/Canister_714320da4aafcb4a47be2353d2b2403b_0.00023318612778400807.h5",
+                    # home_path + "grasps/Bowl_95ac294f47fd7d87e0b49f27ced29e3_0.0008357974151618388.h5",
+                    # home_path + "grasps/Xbox360_435f39e98d2260f0d6e21b8525c3f8bb_0.002061950217848804.h5"
                 ],
-                "support": "/home/juju/contact_graspnet/acronym/grasps/3Shelves_29b66fc9db2f1558e0e89fd83955713c_0.0025867867973150068.h5",
+                "support": home_path + "grasps/3Shelves_29b66fc9db2f1558e0e89fd83955713c_0.0025867867973150068.h5",
                 "num_grasps": 5,
-                "mesh_root": "/home/juju/contact_graspnet/acronym/",
+                "mesh_root": home_path,
                 "support_scale": 0.025,
             }
         )
