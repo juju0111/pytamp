@@ -76,6 +76,7 @@ final_visited_node_num = []
 final_visited_node_num_each_node = []
 
 c_list = 10 ** np.linspace(-2, 2.0, 10)
+pass_idx = [0,1,2,8,9]
 
 
 flag = 0
@@ -88,56 +89,8 @@ elif args.use_pick_action:
     flag = 0
 
 for idx, c in enumerate(c_list):
-
-    benchmark3 = Benchmark3(robot_name="panda", geom="collision", is_pyplot=False)
-
-    mcts = MCTS_rearrangement(
-        scene_mngr=benchmark3.scene_mngr,
-        init_scene = benchmark3.init_scene,
-        sampling_method=algo,
-        budgets=budgets,
-        max_depth=max_depth,
-        grasp_generator_name=args.grasp_generator,
-        c=c,
-        debug_mode=args.debug_mode,
-        use_pick_action=args.use_pick_action,
-        consider_next_scene=args.consider_next_scene,
-        grasp_use_num=args.grasp_use_num,
-    
-    )
-
-    mcts.only_optimize_1 = False
-
-    start_time = time.time()
-    for i in range(budgets):
-        print(
-            f"\n[{idx+1}/{len(c_list)}] Benchmark: {benchmark3.scene_mngr.scene.bench_num}, Algo: {algo}, C: {c}, Seed: {seed}"
-        )
-        mcts.do_planning_rearrange(i)
-
-    print("########### Running time : ", time.time() - start_time, "##############")
-    final_level_1_values.append(mcts.values_for_level_1)
-    final_level_2_values.append(mcts.values_for_level_2)
-
-    if mcts.level_wise_2_success:
-        (
-            pnp_all_joint_paths,
-            pick_all_objects,
-            place_all_object_poses,
-        ) = mcts.get_all_joint_path(mcts.optimal_nodes)
-        final_pnp_all_joint_paths.append(pnp_all_joint_paths)
-        final_pick_all_objects.append(pick_all_objects)
-        final_place_all_object_poses.append(place_all_object_poses)
-        final_optimal_nodes.append(mcts.optimal_nodes)
-
-        ##
-        final_used_time.append(
-            [mcts.time_used_in_level_1, mcts.time_used_in_level_1_5, mcts.time_used_in_level_2]
-        )
-        final_visited_node_num.append([mcts.get_visit_node_num()])
-        final_visited_node_num_each_node.append(mcts.get_visit_node_num_each_depth())
-
-    else:
+    if idx in pass_idx:
+        print("Pass Idx")
         final_pnp_all_joint_paths.append([])
         final_pick_all_objects.append([])
         final_place_all_object_poses.append([])
@@ -146,14 +99,76 @@ for idx, c in enumerate(c_list):
 
         ##
         final_used_time.append(
-            [mcts.time_used_in_level_1, mcts.time_used_in_level_1_5, mcts.time_used_in_level_2]
+            []
         )
-        final_visited_node_num.append([mcts.get_visit_node_num()])
-        final_visited_node_num_each_node.append(mcts.get_visit_node_num_each_depth())
+        final_visited_node_num.append([])
+        final_visited_node_num_each_node.append([])
+    else:
+        benchmark3 = Benchmark3(robot_name="panda", geom="collision", is_pyplot=False)
 
-        # del mcts
-        # print(final_optimal_trees)
-        print("delete mcts")
+        mcts = MCTS_rearrangement(
+            scene_mngr=benchmark3.scene_mngr,
+            init_scene = benchmark3.init_scene,
+            sampling_method=algo,
+            budgets=budgets,
+            max_depth=max_depth,
+            grasp_generator_name=args.grasp_generator,
+            c=c,
+            debug_mode=args.debug_mode,
+            use_pick_action=args.use_pick_action,
+            consider_next_scene=args.consider_next_scene,
+            grasp_use_num=args.grasp_use_num,
+        
+        )
+
+        mcts.only_optimize_1 = False
+
+        start_time = time.time()
+        for i in range(budgets):
+            print(
+                f"\n[{idx+1}/{len(c_list)}] Benchmark: {benchmark3.scene_mngr.scene.bench_num}, Algo: {algo}, C: {c}, Seed: {seed}"
+            )
+            mcts.do_planning_rearrange(i)
+
+        print("########### Running time : ", time.time() - start_time, "##############")
+        final_level_1_values.append(mcts.values_for_level_1)
+        final_level_2_values.append(mcts.values_for_level_2)
+
+        if mcts.level_wise_2_success:
+            (
+                pnp_all_joint_paths,
+                pick_all_objects,
+                place_all_object_poses,
+            ) = mcts.get_all_joint_path(mcts.optimal_nodes)
+            final_pnp_all_joint_paths.append(pnp_all_joint_paths)
+            final_pick_all_objects.append(pick_all_objects)
+            final_place_all_object_poses.append(place_all_object_poses)
+            final_optimal_nodes.append(mcts.optimal_nodes)
+
+            ##
+            final_used_time.append(
+                [mcts.time_used_in_level_1, mcts.time_used_in_level_1_5, mcts.time_used_in_level_2]
+            )
+            final_visited_node_num.append([mcts.get_visit_node_num()])
+            final_visited_node_num_each_node.append(mcts.get_visit_node_num_each_depth())
+
+        else:
+            final_pnp_all_joint_paths.append([])
+            final_pick_all_objects.append([])
+            final_place_all_object_poses.append([])
+            final_optimal_nodes.append([])
+            # final_optimal_trees.append(mcts.tree.nodes)
+
+            ##
+            final_used_time.append(
+                [mcts.time_used_in_level_1, mcts.time_used_in_level_1_5, mcts.time_used_in_level_2]
+            )
+            final_visited_node_num.append([mcts.get_visit_node_num()])
+            final_visited_node_num_each_node.append(mcts.get_visit_node_num_each_depth())
+
+            # del mcts
+            # print(final_optimal_trees)
+            print("delete mcts")
 
 #### File Save ####
 pytamp_path = os.path.abspath(os.path.abspath(os.path.dirname(__file__)) + "/../../../")

@@ -15,13 +15,13 @@ grasp_generator3=$8
 
 # python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 20 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb
 
-python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 20 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator1}
-python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 20 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator2}
-python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 20 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator3}
+# python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 20 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator1}
+# python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 20 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator2}
+# python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 20 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator3}
 
-python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 21 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator1}
-python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 21 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator2}
-python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 21 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator3}
+# python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 21 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator1}
+# python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 21 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator2}
+# python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 21 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator3}
 
 python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 22 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator1}
 python3 -m examples.doosan.mcts.benchmark0_rearr_test --max_depth ${max_depth} --debug_mode false --obj_num ${obj_num} --seed 22 --consider_next_scene ${consider_next_scene} --use_pick_action 0 --algo bai_perturb --grasp_generator ${grasp_generator2}
