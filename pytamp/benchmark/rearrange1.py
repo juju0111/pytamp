@@ -165,7 +165,7 @@ class Rearrange1(Benchmark):
         scene_mngr.show_logical_states()
 
 
-def make_scene():
+def make_scene(obj_num):
     home_path = os.path.join(os.path.expanduser('~'), 'contact_graspnet/acronym/')
 
     def custom_parser():
@@ -192,13 +192,16 @@ def make_scene():
 
     args.objects.append("ben_cube.stl")
     args.objects.append("bottle.stl")
-    # args.objects.append("bottle.stl")
-
-    # args.objects.append("can.stl")
     args.objects.append("can.stl")
-    # args.objects.append("milk.stl")
     args.objects.append("milk.stl")
     args.objects.append("cereal.stl")
+
+    if obj_num>=7:
+        args.objects.append(home_path + "grasps/Candle_b94fcdffbd1befa57f5e345e9a3e5d44_0.012740999337464653.h5")
+        args.objects.append(home_path + "grasps/Canister_714320da4aafcb4a47be2353d2b2403b_0.00023318612778400807.h5")
+    if obj_num>=9:
+        args.objects.append(home_path + "grasps/Candle_b94fcdffbd1befa57f5e345e9a3e5d44_0.012740999337464653.h5")
+        args.objects.append(home_path + "grasps/Canister_714320da4aafcb4a47be2353d2b2403b_0.00023318612778400807.h5")
 
     obj_dict = {}
     object_meshes = []

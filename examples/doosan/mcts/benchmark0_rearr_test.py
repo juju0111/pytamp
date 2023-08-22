@@ -111,7 +111,7 @@ def main():
             final_visited_node_num.append([])
             final_visited_node_num_each_node.append([])
         else:
-            object_names, init_scene, goal_scene = make_scene()
+            object_names, init_scene, goal_scene = make_scene(number)
             rearrangement1 = Rearrange1("panda", object_names, init_scene, goal_scene, is_pyplot=False)
 
             mcts = MCTS_rearrangement(
