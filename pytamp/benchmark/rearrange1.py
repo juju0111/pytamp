@@ -15,7 +15,7 @@ from pykin.utils import mesh_utils as m_utils
 
 
 from pykin.utils.kin_utils import ShellColors as sc
-
+                
 
 class Rearrange1(Benchmark):
     def __init__(
@@ -200,8 +200,8 @@ def make_scene(obj_num):
         args.objects.append(home_path + "grasps/Candle_b94fcdffbd1befa57f5e345e9a3e5d44_0.012740999337464653.h5")
         args.objects.append(home_path + "grasps/Canister_714320da4aafcb4a47be2353d2b2403b_0.00023318612778400807.h5")
     if obj_num>=9:
-        args.objects.append(home_path + "grasps/Candle_b94fcdffbd1befa57f5e345e9a3e5d44_0.012740999337464653.h5")
-        args.objects.append(home_path + "grasps/Canister_714320da4aafcb4a47be2353d2b2403b_0.00023318612778400807.h5")
+        args.objects.append(home_path + "grasps/Cup_fbd39539ca4b2a124e23e9314af9ae57_0.039559999099134775.h5")
+        args.objects.append(home_path + "grasps/Mug_d75af64aa166c24eacbe2257d0988c9c_0.0010000590907862997.h5")
 
     obj_dict = {}
     object_meshes = []
@@ -239,8 +239,8 @@ def make_scene(obj_num):
         object_meshes,
         support_names,
         support_meshes,
-        # for_goal_scene=False,
-        for_goal_scene=True,
+        for_goal_scene=False,
+        # for_goal_scene=True,
         gaussian=[-0.2, -0.2, 0.2, 0.2],
         # gaussian=[-0.1, 0, 0.15, 0.2],
     )

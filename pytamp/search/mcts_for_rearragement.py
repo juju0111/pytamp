@@ -56,7 +56,7 @@ class MCTS_rearrangement:
         self.time_used_in_level_1_5 = 0
         self.time_used_in_level_2 = 0
         self.max_level_1_value = 0
-        self.last_max_level_1_value = 0
+        self.last_max_level_1_value = 0            
         if bench_num == 0:
             # robot action은 우선 패스하고 object transition만 고려해서 Goal Scene을 만족하는
             # state가 나올 때 까지 search!!

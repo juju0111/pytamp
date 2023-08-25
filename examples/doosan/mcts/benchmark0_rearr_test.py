@@ -1,10 +1,11 @@
 import numpy as np
 import argparse
 import os, time
+import random
+import torch 
 
-from pytamp.benchmark import Rearrange1
 from pykin.utils import plot_utils as p_utils
-
+from pytamp.benchmark import Rearrange1
 from pytamp.benchmark.rearrange1 import make_scene
 from pytamp.search.mcts_for_rearragement import MCTS_rearrangement
 
@@ -59,6 +60,15 @@ def get_parser():
     args = parser.parse_args()
     return args
 
+def set_seed_everywhere(seed):
+    # Seed python RNG
+    random.seed(seed)
+    # Seed numpy RNG
+    np.random.seed(seed)
+    # Seed torch
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
 def main():
     args = get_parser()
@@ -69,8 +79,8 @@ def main():
     algo = args.algo
     seed = args.seed
     number = args.obj_num
-    np.random.seed(seed)
-
+    set_seed_everywhere(seed)
+    
     final_level_1_values = []
     final_level_2_values = []
     final_optimal_nodes = []
@@ -180,7 +190,7 @@ def main():
 
     #### File Save ####
     pytamp_path = os.path.abspath(os.path.abspath(os.path.dirname(__file__)) + "/../../../")
-    directory_name = pytamp_path + "/results" + "/benchmark0" + "/benchmark0_rearr_result"
+    directory_name = pytamp_path + "/results" + "/benchmark0" + "/benchmark0_rearr_result_rotated"
     p_utils.createDirectory(directory_name)
 
     num = 0
