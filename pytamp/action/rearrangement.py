@@ -304,7 +304,7 @@ class RearrangementAction(ActivityBase):
 
             if is_collision:
                 print("collision !!! ")
-
+                
             if (not is_collision) and success_check_limit:
                 # print("return all grasp ", all_grasp_pose)
                 self.remove_mixed_scene()

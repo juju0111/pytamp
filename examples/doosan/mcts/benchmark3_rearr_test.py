@@ -172,7 +172,7 @@ for idx, c in enumerate(c_list):
 
 #### File Save ####
 pytamp_path = os.path.abspath(os.path.abspath(os.path.dirname(__file__)) + "/../../../")
-directory_name = pytamp_path + "/results" + "/benchmark3" + "/benchmark3_rearr_result"
+directory_name = pytamp_path + "/results" + "/benchmark3" + "/benchmark3_rearr_result_new"
 p_utils.createDirectory(directory_name)
 
 num = 0

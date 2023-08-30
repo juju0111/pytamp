@@ -184,7 +184,7 @@ class MCTS_rearrangement:
                     scene_mngr.scene.robot.robot_name,
                     self.scene_mngr.scene.bench_num,
                 )
-                self.chance = 3
+                self.chance = 5
             elif self.grasp_generator_name == "scale_balance_grasp":
                 from pytamp.utils.contact_graspnet_utils import Grasp_Using_Scale_Balance_GraspNet
 
@@ -506,6 +506,9 @@ class MCTS_rearrangement:
                     grasps = grasps[random_list]
 
                 if len(grasps):
+                    if self.scene_mngr.scene.bench_num == 3:
+                        self.rearr_action.remove_mixed_scene()
+
                     grasp_poses_not_collision = self.rearr_action.get_all_grasp_poses_not_collision(
                         grasps
                     )
@@ -1087,7 +1090,7 @@ class MCTS_rearrangement:
                 cur_pick_obj_name = cur_logical_action[self.rearr_action.info.REARR_OBJ_NAME]
                 if len(self.pick_obj_set) > 3:
                     print(f"{sc.FAIL}Bad Action{sc.ENDC}")
-                    reward = -10
+                    reward = -1
                 else:
                     reward = 2
                 self.pick_obj_set.add(cur_pick_obj_name)

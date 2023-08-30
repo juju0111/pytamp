@@ -53,13 +53,13 @@ class Benchmark3_for_rearr(Benchmark):
         self.tray_blue_mesh.apply_translation(-self.tray_blue_mesh.center_mass)
 
         #! clearbox 8, 16 is placing spot
-        self.clearbox = get_object_mesh(f"clearbox.stl", scale=[1.2, 1.1, 1.5])
+        self.clearbox = get_object_mesh(f"clearbox.stl", scale=[1.4, 1.3, 1.5])
         self.clearbox_pose = Transform(
             pos=np.array([0.7, 0.4, self.table_height + 0.0001 + abs(self.clearbox.bounds[0][2])]),
             rot=[0, 0, np.pi / 2],
         )
 
-        clearbox_8_mesh = get_object_mesh(f"clearbox_8.stl", scale=[1.2, 1.1, 1.5])
+        clearbox_8_mesh = get_object_mesh(f"clearbox_8.stl", scale=[1.4, 1.3, 1.5])
         self.clearbox_8_height = clearbox_8_mesh.bounds[1][2] - clearbox_8_mesh.bounds[0][2]
 
         self.square_box_num = 3
@@ -74,7 +74,7 @@ class Benchmark3_for_rearr(Benchmark):
             square_box_pose = Transform(
                 pos=np.array(
                     [
-                        0.80,
+                        0.85,
                         0.4,
                         self.table_height
                         + self.clearbox_8_height

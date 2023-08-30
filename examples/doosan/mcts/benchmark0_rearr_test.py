@@ -190,7 +190,7 @@ def main():
 
     #### File Save ####
     pytamp_path = os.path.abspath(os.path.abspath(os.path.dirname(__file__)) + "/../../../")
-    directory_name = pytamp_path + "/results" + "/benchmark0" + "/benchmark0_rearr_result_rotated"
+    directory_name = pytamp_path + "/results" + "/benchmark0" + "/benchmark0_rearr_result"
     p_utils.createDirectory(directory_name)
 
     num = 0

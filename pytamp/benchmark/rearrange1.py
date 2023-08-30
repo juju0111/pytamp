@@ -239,8 +239,8 @@ def make_scene(obj_num):
         object_meshes,
         support_names,
         support_meshes,
-        for_goal_scene=False,
-        # for_goal_scene=True,
+        # for_goal_scene=False,
+        for_goal_scene=True,
         gaussian=[-0.2, -0.2, 0.2, 0.2],
         # gaussian=[-0.1, 0, 0.15, 0.2],
     )
